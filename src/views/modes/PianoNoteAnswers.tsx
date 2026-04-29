@@ -1,15 +1,12 @@
 import { PianoKeyboard } from '../../components/PianoKeyboard';
-import type { DegreeOption } from '../../exercises/pianoNote';
 
 type Props = {
-  options: DegreeOption[];
   disabled: boolean;
-  picked?: string;
-  onPick: (label: string) => void;
+  picked?: number;
+  onPick: (semitones: number) => void;
+  labelFor: (semitones: number) => string;
 };
 
-export function PianoNoteAnswers({ options, disabled, picked, onPick }: Props) {
-  return (
-    <PianoKeyboard pool={options} disabled={disabled} picked={picked} onPick={onPick} />
-  );
+export function PianoNoteAnswers(props: Props) {
+  return <PianoKeyboard {...props} />;
 }

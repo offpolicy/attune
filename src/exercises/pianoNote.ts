@@ -93,7 +93,24 @@ export type PianoNoteQuestion = {
   degreeLabel: string;
 };
 
-export type PianoNoteAnswer = string;
+export type PianoNoteAnswer = number; // semitones from tonic, 0–11
+
+const SOLFEGE_LABELS = [
+  'do', 'di', 're', 'ri', 'mi', 'fa',
+  'fi', 'sol', 'si', 'la', 'li', 'ti',
+] as const;
+
+const NUMERIC_LABELS = [
+  '1', 'b2', '2', 'b3', '3', '4',
+  '#4', '5', 'b6', '6', 'b7', '7',
+] as const;
+
+export function makeLabelFor(
+  scheme: 'solfege' | 'numeric',
+): (semitones: number) => string {
+  const arr = scheme === 'solfege' ? SOLFEGE_LABELS : NUMERIC_LABELS;
+  return (s) => arr[s] ?? '';
+}
 
 export function generatePianoNoteQuestion(
   knobs: PianoNoteKnobs,
@@ -130,7 +147,8 @@ export async function playPianoTonic(q: PianoNoteQuestion): Promise<void> {
 }
 
 export function isCorrectPianoNote(q: PianoNoteQuestion, a: PianoNoteAnswer): boolean {
-  return q.degreeLabel === a;
+  const targetSemitones = ((q.targetMidi - q.tonicMidi) % 12 + 12) % 12;
+  return targetSemitones === a;
 }
 
 export function describePianoNote(q: PianoNoteQuestion): string {

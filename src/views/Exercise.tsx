@@ -12,7 +12,7 @@ import {
   playPianoTonic,
   isCorrectPianoNote,
   describePianoNote,
-  poolDegrees,
+  makeLabelFor,
   type PianoNoteQuestion,
 } from '../exercises/pianoNote';
 import { PianoNoteAnswers } from './modes/PianoNoteAnswers';
@@ -23,8 +23,13 @@ type Phase = 'idle' | 'played' | 'answered';
 type ExerciseState = {
   phase: Phase;
   question: PianoNoteQuestion;
-  userAnswer?: string;
+  userAnswer?: number;
   correct?: boolean;
+};
+
+// White-key shortcuts: 1–7 → C D E F G A B (do re mi fa sol la ti).
+const NUMBER_TO_SEMITONES: Record<string, number> = {
+  '1': 0, '2': 2, '3': 4, '4': 5, '5': 7, '6': 9, '7': 11,
 };
 
 type Props = { mode: Mode };
@@ -49,11 +54,7 @@ function PianoNoteExercise() {
   }));
   const [busy, setBusy] = useState(false);
 
-  const degreeOptions = useMemo(() => poolDegrees(knobs), [knobs]);
-  const orderedOptions = useMemo(
-    () => [...degreeOptions].sort((a, b) => a.semitones - b.semitones),
-    [degreeOptions],
-  );
+  const labelFor = useMemo(() => makeLabelFor(knobs.labels), [knobs.labels]);
 
   // Preload piano samples on mount so first play has minimal delay.
   useEffect(() => {
@@ -80,11 +81,16 @@ function PianoNoteExercise() {
   }, [exState.question]);
 
   const submit = useCallback(
-    (label: string) => {
+    (semitones: number) => {
       if (exState.phase !== 'played') return;
-      const correct = isCorrectPianoNote(exState.question, label);
+      const correct = isCorrectPianoNote(exState.question, semitones);
       recordTakeFor('piano-note', correct);
-      setExState((s) => ({ ...s, phase: 'answered', userAnswer: label, correct }));
+      setExState((s) => ({
+        ...s,
+        phase: 'answered',
+        userAnswer: semitones,
+        correct,
+      }));
     },
     [exState.phase, exState.question, recordTakeFor],
   );
@@ -97,8 +103,7 @@ function PianoNoteExercise() {
     });
   }, [knobs]);
 
-  // Keyboard shortcuts: space = play target, d = play tonic, 1-N = pick Nth
-  // enabled note in pitch order, enter = next take after answering.
+  // Keyboard shortcuts.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
@@ -117,19 +122,14 @@ function PianoNoteExercise() {
         next();
         return;
       }
-      const num = parseInt(e.key, 10);
-      if (
-        !Number.isNaN(num) &&
-        num >= 1 &&
-        num <= orderedOptions.length &&
-        exState.phase === 'played'
-      ) {
-        submit(orderedOptions[num - 1]!.label);
+      const semi = NUMBER_TO_SEMITONES[e.key];
+      if (semi !== undefined && exState.phase === 'played') {
+        submit(semi);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [exState.phase, orderedOptions, playTarget, playTonic, submit, next]);
+  }, [exState.phase, playTarget, playTonic, submit, next]);
 
   const modeStats = stats['piano-note'];
   const todayPct =
@@ -177,10 +177,10 @@ function PianoNoteExercise() {
 
         <div className="my-8 w-full">
           <PianoNoteAnswers
-            options={degreeOptions}
             disabled={exState.phase !== 'played'}
             picked={exState.userAnswer}
             onPick={submit}
+            labelFor={labelFor}
           />
         </div>
 
