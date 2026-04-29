@@ -9,7 +9,7 @@ References:
 
 ## Goals
 
-1. All six exercise modes in the 2 × 3 **instrument × activity** matrix ship in v1: piano + guitar × (single note, single chord, chord progression). Mode pairs that share knob shapes (e.g. `piano-note` + `guitar-note`) reuse the same generator and answer UI; only audio rendering differs per instrument.
+1. Eight exercise modes in a **ragged instrument × activity matrix** ship in v1: piano and guitar each cover (single note, single chord, chord progression); bass covers (single note, bassline). Mode pairs that share knob shapes (e.g. `piano-note` + `guitar-note` + `bass-note`) reuse the same generator and answer UI; only audio rendering differs per instrument.
 2. Two-step picker: home selects an **instrument**, the instrument page selects a **mode** (single note / single chord / chord progression). See [`./wireframe.md`](./wireframe.md).
 3. Deployed as a static site at GitHub Pages.
 4. No backend, no accounts, all state in `localStorage`.
@@ -109,18 +109,27 @@ src/
 
 Each mode has a `level` (1–5) that drives a set of fine-tune knobs through a preset table. Users can override individual knobs; doing so flips that mode's `level` to `'custom'`.
 
-A `Mode` is the cartesian product of an `Instrument` and an `Activity`. The 6 ids are derived via a template-literal type so adding instruments later (`bass`, `voice`) is a single-line change. v1 only implements 3 of the 6 ids; the rest exist as type-level cells but have no settings/stats/exercise wiring yet.
+A `Mode` is one of a fixed set of `${Instrument}-${Activity}` ids. The matrix is ragged — not every product cell exists. `INSTRUMENT_ACTIVITIES` is the source of truth for which activities each instrument exposes; the picker iterates that map.
 
 ```ts
-type Instrument = 'piano' | 'guitar';
-type Activity   = 'note' | 'chord' | 'prog';
-type Mode       = `${Instrument}-${Activity}`;
-//                  'piano-note'   'piano-chord'   'piano-prog'
-//                  'guitar-note'  'guitar-chord'  'guitar-prog'
+type Instrument = 'piano' | 'guitar' | 'bass';
+type Activity   = 'note' | 'chord' | 'prog' | 'roots';
 
-// v1 implemented set:
+type Mode =
+  | 'piano-note'  | 'piano-chord'  | 'piano-prog'
+  | 'guitar-note' | 'guitar-chord' | 'guitar-prog'
+  | 'bass-note'   | 'bass-roots';
+
+const INSTRUMENT_ACTIVITIES: Record<Instrument, Activity[]> = {
+  piano:  ['note', 'chord', 'prog'],
+  guitar: ['note', 'chord', 'prog'],
+  bass:   ['note', 'roots'],          // bassline; bass skips chord/prog
+};
+
 const IMPLEMENTED_MODES: ReadonlySet<Mode> = new Set([
-  'piano-note', 'guitar-chord', 'guitar-prog',
+  'piano-note', 'piano-chord', 'piano-prog',
+  'guitar-note', 'guitar-chord', 'guitar-prog',
+  'bass-note', 'bass-roots',
 ]);
 
 type Level = 1 | 2 | 3 | 4 | 5 | 'custom';
@@ -200,7 +209,7 @@ Hash routes mirror the picker tree: `#/{instrument}` for the mode picker and `#/
 | `#/guitar/prog` | `Exercise mode='guitar-prog'` |
 | `#/settings` | `Settings` |
 
-All six `{instrument}/{activity}` cells route to a working exercise. The picker still supports a disabled "(coming soon)" card variant for forward compatibility (new instruments or activities mid-development), and the route parser falls back to the instrument picker for any cell not in `IMPLEMENTED_MODES`.
+All eight `{instrument}/{activity}` cells route to a working exercise. Routing to an invalid pair (e.g. `/bass/chord` — bass doesn't have a chord activity) falls back to that instrument's mode picker. The picker only renders activity cards from `INSTRUMENT_ACTIVITIES[instrument]`, so users never reach an invalid URL through normal navigation. The disabled "(coming soon)" card variant is retained for forward compatibility with mid-development additions.
 
 Legacy deep links from the pre-matrix shape (`#/piano-note`, `#/guitar-chord`, `#/guitar-prog`) redirect to the new `{instrument}/{activity}` form. The redirect is a one-line shim in `lib/route.ts` and can be removed once the wild-link half-life passes.
 
@@ -269,7 +278,7 @@ Each milestone is independently demoable. Don't start the next until the previou
 - Subtitle on this mode: **"name the changes."**
 - Roman-numeral toggle in settings; per-slot feedback after submit.
 
-**Done when:** all six matrix cells are usable end-to-end at all 5 levels, and each per-instrument mode picker shows real stats + current level for each card.
+**Done when:** all eight matrix cells are usable end-to-end at all 5 levels, and each per-instrument mode picker shows real stats + current level for each card.
 
 ### M6 — Polish (1 day, ongoing)
 
@@ -321,8 +330,9 @@ Each milestone is independently demoable. Don't start the next until the previou
 - Light mode.
 - Adaptive difficulty (gradually expand chord pool as accuracy stays high).
 - More exercises: intervals, scale identification, melodic dictation.
-- Specialization of the cross-instrument modes — piano-friendly curated chord voicings, a fretboard-style answer area for guitar single note, distinct level tables tuned per instrument. Shared infrastructure ships first; specialization is driven by ear-testing feedback.
-- Additional instruments (bass, voice, etc.) — the `Mode = '${Instrument}-${Activity}'` type makes adding a third row to the matrix a small change.
-- Per-instrument settings reorganization (currently one section per mode = six sections; regrouping by instrument waits until the section list grows or feedback says it should).
+- Specialization of the cross-instrument modes — piano-friendly curated chord voicings, a fretboard-style answer area for guitar single note, walking-style bass arpeggiation for bassline mode, distinct level tables tuned per instrument. Shared infrastructure ships first; specialization is driven by ear-testing feedback.
+- Additional instruments (voice, drums-as-pitch, etc.) — adding to `Instrument` and `INSTRUMENT_ACTIVITIES` is the entire schema change.
+- Bass chord progression mode (would need a bass-arpeggio playback scheme: root + 5th + root pattern outlining harmony). Skipped from v1 because bass + bassline already covers root-listening; chord-quality recognition on bass is rarer in practice.
+- Per-instrument settings reorganization (currently one section per mode = eight sections; regrouping by instrument waits until the section list grows or feedback says it should).
 - Custom progressions / user-curated chord pools.
 - Per-question timing / decision-time stats.

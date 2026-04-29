@@ -36,8 +36,9 @@ export function parseRoute(): Route {
 
   if (segs.length === 2 && isInstrument(segs[0]!) && isActivity(segs[1]!)) {
     const mode = modeId(segs[0]!, segs[1]!);
-    if (IMPLEMENTED_MODES.has(mode)) return { name: 'exercise', mode };
-    // Unimplemented matrix cell: drop the user back at the instrument's mode picker.
+    if (mode != null) return { name: 'exercise', mode };
+    // Invalid pair (e.g. bass + chord) or unimplemented cell: send the user
+    // back to the instrument's mode picker.
     return { name: 'instrument', instrument: segs[0]! };
   }
 

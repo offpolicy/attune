@@ -1,6 +1,6 @@
 # Wireframe
 
-A single-page app called **attune**, served from GitHub Pages. Exercises are organized as an **instrument × activity matrix** — the home screen picks an instrument, the next screen picks a mode (single note / single chord / chord progression). Everything past that is the same exercise shell.
+A single-page app called **attune**, served from GitHub Pages. Exercises are organized as an **instrument × activity matrix** — the home screen picks an instrument, the next screen picks a mode. The matrix is **ragged**: each instrument exposes the activities that fit it. Piano and guitar do `single note · single chord · chord progression`; bass swaps `single chord` for **`bassline`** (root motion identification). Everything past the picker is the same exercise shell.
 
 ## Routes
 
@@ -17,9 +17,11 @@ Hash-based, so no server config is needed.
 | `#/guitar/note` | Guitar · single note quiz |
 | `#/guitar/chord` | Guitar · single chord quiz |
 | `#/guitar/prog` | Guitar · chord progression quiz |
+| `#/bass/note` | Bass · single note quiz |
+| `#/bass/roots` | Bass · bassline (root motion) quiz |
 | `#/settings` | Settings (drawer on desktop, full screen on mobile) |
 
-The `{instrument}/{activity}` URL shape mirrors the picker tree. Activity slugs (`note`, `chord`, `prog`) match the exercise IDs so legacy deep links like `#/piano-note` redirect to `#/piano/note` with a one-line shim. All 6 matrix cells ship.
+The `{instrument}/{activity}` URL shape mirrors the picker tree. Activity slugs (`note`, `chord`, `prog`, `roots`) match the exercise IDs so legacy deep links like `#/piano-note` redirect to `#/piano/note` with a one-line shim. Routing to an invalid pair (e.g. `/bass/chord`) falls back to the instrument's mode picker; the picker only renders activity cards from `INSTRUMENT_ACTIVITIES[instrument]` so the user never reaches an invalid URL through normal navigation.
 
 ## Shared shell
 
@@ -55,7 +57,7 @@ A few labels borrow contemporary studio language. Used consistently across all m
 
 ## 1. Home — instrument picker
 
-Picks an instrument. No audio plays here. Two cards, stacked.
+Picks an instrument. No audio plays here. Three cards, stacked.
 
 ```
 ┌──────────────────────────────────┐
@@ -65,26 +67,31 @@ Picks an instrument. No audio plays here. Two cards, stacked.
 │  pick your instrument            │
 │                                  │
 │  ┌────────────────────────────┐  │
-│  │ i.  piano                  │  │
-│  │     keyboard exercises     │  │
+│  │ i.   piano                 │  │
+│  │      keyboard exercises    │  │
 │  └────────────────────────────┘  │
 │                                  │
 │  ┌────────────────────────────┐  │
-│  │ ii. guitar                 │  │
-│  │     fretboard exercises    │  │
+│  │ ii.  guitar                │  │
+│  │      fretboard exercises   │  │
+│  └────────────────────────────┘  │
+│                                  │
+│  ┌────────────────────────────┐  │
+│  │ iii. bass                  │  │
+│  │      low-end exercises     │  │
 │  └────────────────────────────┘  │
 │                                  │
 └──────────────────────────────────┘
 ```
 
 - Each instrument card shows ordinal, name, and a one-line italic descriptor.
-- Tapping a card routes to that instrument's mode picker (`#/piano` or `#/guitar`).
+- Tapping a card routes to that instrument's mode picker (`#/piano`, `#/guitar`, or `#/bass`).
 - No per-instrument stats here on purpose — stats are per-mode and live one level deeper, where they're actionable.
-- New instruments (bass, voice, etc.) are an additive change in v2 — append a third card, no other surface changes.
+- New instruments (voice, etc.) are an additive change — append a card, extend the `Instrument` type, add a row to `INSTRUMENT_ACTIVITIES`.
 
 ## 2. Instrument page — mode picker
 
-Picks a mode for the selected instrument. Three cards: **single note · single chord · chord progression**. No audio plays here either.
+Picks a mode for the selected instrument. The card list is `INSTRUMENT_ACTIVITIES[instrument]` — three cards for piano/guitar (`single note · single chord · chord progression`), two for bass (`single note · bassline`). No audio plays here either.
 
 ```
 ┌──────────────────────────────────┐
@@ -124,12 +131,15 @@ Picks a mode for the selected instrument. Three cards: **single note · single c
 
 ### The matrix at v1
 
-|              | single note | single chord | chord progression |
-|---           |---          |---           |---                |
-| **piano**    | ✓           | ✓            | ✓                 |
-| **guitar**   | ✓           | ✓            | ✓                 |
+|              | single note | single chord | chord progression | bassline |
+|---           |---          |---           |---                |---       |
+| **piano**    | ✓           | ✓            | ✓                 | —        |
+| **guitar**   | ✓           | ✓            | ✓                 | —        |
+| **bass**     | ✓           | —            | —                 | ✓        |
 
-All six matrix cells ship in v1. Single chord and progression modes share the same chord library and generators between piano and guitar — only audio rendering differs (block chord on piano vs strummed on guitar, root-octave synthesized voicing on piano vs curated open-position voicing on guitar). Adding instruments (e.g. bass) extends the matrix vertically without touching the picker tree.
+The matrix is **ragged**: bass skips `chord` and `progression` (bass doesn't play chords in the strummed/block sense, and `chord progression` overlaps with `bassline` from a bass-listening perspective) and gains **`bassline`** instead. The type system models this via `INSTRUMENT_ACTIVITIES: Record<Instrument, Activity[]>`; the mode picker iterates that map.
+
+Activity slug `roots` maps to display name "bassline" (URL: `#/bass/roots`, mode id: `bass-roots`). Naming detail: the slug stays short (`roots`), the display label uses the natural musician term ("bassline"), and the prompt is "name the bassline."
 
 ## 3. Exercise screens — common pattern
 
@@ -212,7 +222,31 @@ Answer area is a one-octave **piano keyboard**, not a chip grid:
 - One strummed chord plays.
 - Answer chips show only chords currently in the active pool, which is determined by the current level. At higher levels the chip count grows substantially (4 → 22 across L1–L5); see [`./progression-algorithm.md`](./progression-algorithm.md) for the level preset table this mode shares with the progression mode's chord vocabulary.
 
-## 6. Guitar · chord progression — answer area
+## 6. Bass · bassline — answer area
+
+The bassline mode subtitle is **"name the bassline."** Audio is a duet — piano plays the chord progression as block chords, bass doubles each chord's root one octave below in the bass register (E1–B2). The user identifies the *sequence of root notes*, not the chord qualities.
+
+```
+        ─── answer area ───
+
+   key of C  ·  4 chords
+
+   slot 1: [ C ]   <- selected
+   slot 2: [   ]
+   slot 3: [   ]
+   slot 4: [   ]
+
+   [ C ] [ D ] [ E ] [ F ] [ G ] [ A ] [ B ]
+
+   [ submit ]
+```
+
+- Chip pool is the diatonic root names reachable from the active Roman pool (in C: a subset of `C, D, E, F, G, A, B`).
+- Same slot interaction as the chord progression mode — tap a chip to fill the next empty slot, tap a filled slot to clear it.
+- After submit: per-slot ✓/✗ feedback; the feedback line shows the correct root sequence (`C → F → G → C`).
+- Audio voicings: piano plays the chord (synthesized mid-octave voicing, slightly lowered velocity), bass plucks the root one octave below the chord's bass note. The bass note pops out underneath; the listener tracks it through changes.
+
+## 7. Chord progression — answer area
 
 The progression mode subtitle is **"name the changes."**
 
@@ -236,18 +270,19 @@ The progression mode subtitle is **"name the changes."**
 - After submit: each slot shows ✓ or ✗ in place; feedback line shows the correct progression. Optional roman-numeral view toggle.
 - Generation logic (template-based v1): see [`./progression-algorithm.md`](./progression-algorithm.md).
 
-## 7. Cross-instrument modes
+## 8. Cross-instrument modes
 
-The single-chord and progression modes are now multi-instrument; the same generator and answer UI serve both piano and guitar variants. Audio rendering branches on `instrument`:
+The note, chord, and progression modes are multi-instrument; the same generator and answer UI serve all variants. Audio rendering branches on `instrument`:
 
-- **single chord** — guitar plays a strum (22ms inter-string stagger); piano plays a block chord (no stagger).
-- **chord progression** — same idea per slot. Piano gets a block-chord per progression step; guitar strums.
-- **voicing source** — guitar uses curated open-position voicings (anchored low on the fretboard) when available, falling back to the synthesized voicing. Piano always uses the synthesized voicing (mid-octave, no curated overrides for now).
-- **single note** — same pool/range/labels for piano and guitar; the only difference is which soundfont plays the target / tonic.
+- **single note** — same pool/range/labels for piano, guitar, and bass; the only difference is which soundfont plays the target / tonic.
+- **single chord** — guitar plays a strum (22ms inter-string stagger); piano plays a block chord (no stagger). Bass doesn't have this mode.
+- **chord progression** — same idea per slot. Piano gets a block chord per progression step; guitar strums. Bass doesn't have this mode (its analogue is `bassline`).
+- **bassline** — bass-only. Audio is a piano + bass duet (chord on piano, root on bass one octave below); the listener identifies root motion.
+- **voicing source** — guitar uses curated open-position voicings (anchored low on the fretboard) when available, falling back to the synthesized voicing. Piano always uses the synthesized voicing (mid-octave). Bass plays a single root pitched in the E1–B2 register via `bassOctaveRootMidi(root)`.
 
-Specialization (e.g. piano-friendly chord curated voicings, a fretboard-style answer area for guitar single note) is a follow-up; the shared-infrastructure baseline ships first so the matrix can be ear-tested end-to-end.
+Specialization (e.g. piano-friendly chord curated voicings, a fretboard-style answer area for guitar single note, walking-style bass arpeggiation for bassline) is a follow-up; the shared-infrastructure baseline ships first so the matrix can be ear-tested end-to-end.
 
-## 8. Settings
+## 9. Settings
 
 Drawer from the right on desktop, full screen on mobile. Most users only touch **level**; advanced knobs are tucked behind a disclosure.
 
@@ -319,13 +354,13 @@ The other implemented modes have analogous tables — single chord by chord-name
 ## Navigation flow
 
 ```
-                        home
-                       ╱     ╲
-                      ╱       ╲
-                  piano       guitar
-                 ╱  │  ╲      ╱  │  ╲
-               note ch prog note ch prog
-               (✓) (✓)(✓)  (✓) (✓)(✓)
+                          home
+                       ╱   │   ╲
+                      ╱    │    ╲
+                 piano   guitar  bass
+                ╱ │ ╲    ╱ │ ╲    ╱  ╲
+             note ch pr note ch pr note bassline
+             (✓)(✓)(✓) (✓)(✓)(✓) (✓)  (✓)
 
    any screen → settings → back to where you were
    exercise   →    [←]   → mode picker for that instrument

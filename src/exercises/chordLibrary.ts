@@ -160,11 +160,17 @@ export function parseChordName(name: ChordName): {
 
 // Lowest MIDI value at this pitch class within E2..D#3 (40..51).
 // Keeps every chord's bass note in a guitar-friendly low register.
-function lowOctaveRootMidi(root: Root): number {
+export function lowOctaveRootMidi(root: Root): number {
   const pc = ROOT_PC[root];
   let m = 40;
   while (m % 12 !== pc) m++;
   return m;
+}
+
+// Bass-guitar register: one octave below the chord's root, in E1..D#2 (28..39).
+// Used for bassline mode where bass doubles the chord root underneath.
+export function bassOctaveRootMidi(root: Root): number {
+  return lowOctaveRootMidi(root) - 12;
 }
 
 // Build a recognizable, register-balanced voicing from intervals alone.

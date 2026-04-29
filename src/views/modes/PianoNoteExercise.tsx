@@ -33,17 +33,19 @@ const NUMBER_TO_SEMITONES: Record<string, number> = {
 const SETTINGS_KEY = {
   'piano-note':  'pianoNote',
   'guitar-note': 'guitarNote',
+  'bass-note':   'bassNote',
 } as const;
 
-const TITLE: Record<'piano-note' | 'guitar-note', string> = {
+const TITLE: Record<'piano-note' | 'guitar-note' | 'bass-note', string> = {
   'piano-note':  'piano · single note',
   'guitar-note': 'guitar · single note',
+  'bass-note':   'bass · single note',
 };
 
-type SingleNoteMode = 'piano-note' | 'guitar-note';
+type SingleNoteMode = 'piano-note' | 'guitar-note' | 'bass-note';
 
 function isSingleNoteMode(m: Mode): m is SingleNoteMode {
-  return m === 'piano-note' || m === 'guitar-note';
+  return m === 'piano-note' || m === 'guitar-note' || m === 'bass-note';
 }
 
 export function PianoNoteExercise({ mode = 'piano-note' as Mode }: { mode?: Mode } = {}) {

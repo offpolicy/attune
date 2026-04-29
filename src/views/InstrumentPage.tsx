@@ -8,7 +8,9 @@ import { useStats } from '../state/stats';
 import { useSettings } from '../state/settings';
 import { levelLabel } from '../exercises/levels';
 import {
-  IMPLEMENTED_MODES,
+  ACTIVITY_PROMPT,
+  ACTIVITY_TITLE,
+  INSTRUMENT_ACTIVITIES,
   modeId,
   type Activity,
   type Instrument,
@@ -19,17 +21,15 @@ import type { Settings } from '../state/settings';
 
 const ORDINALS = ['i.', 'ii.', 'iii.'];
 
-const ACTIVITIES: { activity: Activity; title: string; subtitle: string }[] = [
-  { activity: 'note',  title: 'single note',       subtitle: 'name the note'    },
-  { activity: 'chord', title: 'single chord',      subtitle: 'name the chord'   },
-  { activity: 'prog',  title: 'chord progression', subtitle: 'name the changes' },
-];
-
 const INSTRUMENT_TITLE: Record<Instrument, string> = {
-  piano: 'piano',
+  piano:  'piano',
   guitar: 'guitar',
+  bass:   'bass',
 };
 
+// Maps a Mode id to its persisted-settings key. The matrix is ragged, so
+// not every (instrument, activity) pair has an entry — this only handles
+// the implemented cells.
 function settingsKeyFor(mode: Mode): keyof Settings {
   switch (mode) {
     case 'piano-note':   return 'pianoNote';
@@ -38,6 +38,8 @@ function settingsKeyFor(mode: Mode): keyof Settings {
     case 'guitar-note':  return 'guitarNote';
     case 'guitar-chord': return 'guitarChord';
     case 'guitar-prog':  return 'guitarProg';
+    case 'bass-note':    return 'bassNote';
+    case 'bass-roots':   return 'bassRoots';
   }
 }
 
@@ -50,6 +52,8 @@ function formatStats(s: ModeStats): string {
 export function InstrumentPage({ instrument }: { instrument: Instrument }) {
   const { stats } = useStats();
   const { settings } = useSettings();
+
+  const activities: Activity[] = INSTRUMENT_ACTIVITIES[instrument];
 
   return (
     <main className="mx-auto max-w-2xl px-6 pt-8 pb-24">
@@ -76,26 +80,24 @@ export function InstrumentPage({ instrument }: { instrument: Instrument }) {
       </p>
 
       <section className="space-y-3">
-        {ACTIVITIES.map((card, i) => {
-          const mode = modeId(instrument, card.activity);
-          const implemented = IMPLEMENTED_MODES.has(mode);
+        {activities.map((activity, i) => {
+          const mode = modeId(instrument, activity);
+          // The activity list comes from INSTRUMENT_ACTIVITIES[instrument],
+          // which only contains valid (implemented) pairs — modeId is non-null.
+          if (mode == null) return null;
           const settingsKey = settingsKeyFor(mode);
           const modeStats = stats[mode];
           const level = settings[settingsKey].level;
-
-          const statLine = implemented
-            ? `level ${level === 'custom' ? '·' : level} · ${levelLabel(level)} · ${formatStats(modeStats)}`
-            : 'coming soon';
+          const statLine = `level ${level === 'custom' ? '·' : level} · ${levelLabel(level)} · ${formatStats(modeStats)}`;
 
           return (
             <ModeCard
-              key={card.activity}
+              key={activity}
               ordinal={ORDINALS[i]!}
-              title={card.title}
-              subtitle={card.subtitle}
+              title={ACTIVITY_TITLE[activity]}
+              subtitle={ACTIVITY_PROMPT[activity]}
               statLine={statLine}
-              disabled={!implemented}
-              onClick={implemented ? () => navigateToMode(mode) : undefined}
+              onClick={() => navigateToMode(mode)}
             />
           );
         })}

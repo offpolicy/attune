@@ -2,11 +2,12 @@ import { ModeCard } from '../components/ModeCard';
 import { navigateToInstrument, navigateToSettings } from '../lib/route';
 import type { Instrument } from '../types';
 
-const ORDINALS = ['i.', 'ii.'];
+const ORDINALS = ['i.', 'ii.', 'iii.'];
 
 const INSTRUMENTS: { instrument: Instrument; title: string; subtitle: string }[] = [
   { instrument: 'piano',  title: 'piano',  subtitle: 'keyboard exercises'  },
   { instrument: 'guitar', title: 'guitar', subtitle: 'fretboard exercises' },
+  { instrument: 'bass',   title: 'bass',   subtitle: 'low-end exercises'   },
 ];
 
 export function Home() {

@@ -33,8 +33,9 @@ export type GuitarProgKnobs = {
 };
 
 // Note/chord/progression knob types are reused per instrument in v1; the same
-// shape serves both piano-note and guitar-note (etc.). Specialization can come
-// later if a per-instrument knob diverges.
+// shape serves both piano-note and guitar-note (etc.). Bassline reuses the
+// progression knobs since the question is built from a chord progression.
+// Specialization can come later if a per-instrument knob diverges.
 export type Settings = {
   pianoNote:   { level: Level; knobs: PianoNoteKnobs };
   pianoChord:  { level: Level; knobs: GuitarChordKnobs };
@@ -42,6 +43,8 @@ export type Settings = {
   guitarNote:  { level: Level; knobs: PianoNoteKnobs };
   guitarChord: { level: Level; knobs: GuitarChordKnobs };
   guitarProg:  { level: Level; knobs: GuitarProgKnobs };
+  bassNote:    { level: Level; knobs: PianoNoteKnobs };
+  bassRoots:   { level: Level; knobs: GuitarProgKnobs };
 };
 
 const STORAGE_KEY = 'attune:settings:v1';
@@ -73,6 +76,8 @@ export const DEFAULT_SETTINGS: Settings = {
   guitarNote:  { level: 1, knobs: { ...DEFAULT_NOTE_KNOBS } },
   guitarChord: { level: 1, knobs: structuredClone(DEFAULT_CHORD_KNOBS) },
   guitarProg:  { level: 1, knobs: structuredClone(DEFAULT_PROG_KNOBS) },
+  bassNote:    { level: 1, knobs: { ...DEFAULT_NOTE_KNOBS } },
+  bassRoots:   { level: 1, knobs: structuredClone(DEFAULT_PROG_KNOBS) },
 };
 
 type SettingsCtx = {
@@ -94,6 +99,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       guitarNote:  persisted.guitarNote  ?? DEFAULT_SETTINGS.guitarNote,
       guitarChord: persisted.guitarChord ?? DEFAULT_SETTINGS.guitarChord,
       guitarProg:  persisted.guitarProg  ?? DEFAULT_SETTINGS.guitarProg,
+      bassNote:    persisted.bassNote    ?? DEFAULT_SETTINGS.bassNote,
+      bassRoots:   persisted.bassRoots   ?? DEFAULT_SETTINGS.bassRoots,
     };
   });
 

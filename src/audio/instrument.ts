@@ -1,10 +1,11 @@
 import { Soundfont } from 'smplr';
 
-export type InstrumentName = 'piano' | 'guitar';
+export type InstrumentName = 'piano' | 'guitar' | 'bass';
 
 const GM_INSTRUMENTS: Record<InstrumentName, string> = {
   piano: 'acoustic_grand_piano',
   guitar: 'acoustic_guitar_steel',
+  bass: 'electric_bass_finger',
 };
 
 let sharedContext: AudioContext | null = null;

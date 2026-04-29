@@ -21,6 +21,8 @@ export {
   QUALITY_INTERVALS,
   parseChordName,
   synthesizeVoicing,
+  lowOctaveRootMidi,
+  bassOctaveRootMidi,
 } from './chordLibrary';
 
 // Hand-tuned open-position voicings. Anything not listed here is

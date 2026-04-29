@@ -158,15 +158,26 @@ export function SettingsView() {
           settingsKey="guitarProg"
           title="guitar · chord progression"
         />
+        <SingleNoteSection
+          settingsKey="bassNote"
+          title="bass · single note"
+        />
+        <ProgSection
+          settingsKey="bassRoots"
+          title="bass · bassline"
+          subtitle="name the bassline"
+        />
         <DataSection />
       </div>
     </main>
   );
 }
 
-type NoteKey  = 'pianoNote'  | 'guitarNote';
+type NoteKey  = 'pianoNote'  | 'guitarNote' | 'bassNote';
 type ChordKey = 'pianoChord' | 'guitarChord';
-type ProgKey  = 'pianoProg'  | 'guitarProg';
+// bassRoots reuses GuitarProgKnobs and renders with ProgSection; the section's
+// `subtitle` prop ("name the bassline" vs "name the changes") differentiates.
+type ProgKey  = 'pianoProg'  | 'guitarProg' | 'bassRoots';
 
 // ────────── single note (piano + guitar) ──────────
 
@@ -340,7 +351,8 @@ function SingleChordSection({
 function ProgSection({
   settingsKey,
   title,
-}: { settingsKey: ProgKey; title: string }) {
+  subtitle = 'name the changes',
+}: { settingsKey: ProgKey; title: string; subtitle?: string }) {
   const { settings, setSettings } = useSettings();
   const cur = settings[settingsKey];
 
@@ -372,7 +384,7 @@ function ProgSection({
   };
 
   return (
-    <Section title={title} subtitle="name the changes">
+    <Section title={title} subtitle={subtitle}>
       <LevelSegments current={cur.level} onChange={setLevel} />
 
       <Disclosure summary="fine-tune">

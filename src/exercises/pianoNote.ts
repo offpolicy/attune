@@ -127,10 +127,10 @@ export function generatePianoNoteQuestion(
   return { tonicMidi, targetMidi, degreeLabel: degree.label };
 }
 
-// Guitar samples have a slower decay than piano hammers; give them more
-// duration so the note doesn't get cut off mid-pluck.
-const TARGET_DURATION: Record<InstrumentName, number> = { piano: 1.4, guitar: 1.8 };
-const TONIC_DURATION:  Record<InstrumentName, number> = { piano: 1.0, guitar: 1.4 };
+// Plucked-string samples (guitar, bass) have slower decay than piano hammers;
+// give them more duration so the note doesn't get cut off mid-pluck.
+const TARGET_DURATION: Record<InstrumentName, number> = { piano: 1.4, guitar: 1.8, bass: 1.8 };
+const TONIC_DURATION:  Record<InstrumentName, number> = { piano: 1.0, guitar: 1.4, bass: 1.4 };
 
 export async function playNoteTarget(
   instrument: InstrumentName,

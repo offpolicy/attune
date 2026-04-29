@@ -27,16 +27,17 @@ const EMPTY: ModeStats = {
   today: { correct: 0, total: 0, dateISO: '' },
 };
 
-// Stats is keyed by Mode, which is the full instrument×activity matrix (6 cells).
-// The three v2-deferred cells get inert empty entries so consumers can read
-// stats[mode] uniformly without undefined checks. They're never written to.
+// Stats is keyed by Mode (8 cells in the ragged matrix). All keys exist so
+// consumers can read stats[mode] uniformly without undefined checks.
 export const DEFAULT_STATS: Stats = {
-  'piano-note': structuredClone(EMPTY),
-  'piano-chord': structuredClone(EMPTY),
-  'piano-prog': structuredClone(EMPTY),
-  'guitar-note': structuredClone(EMPTY),
+  'piano-note':   structuredClone(EMPTY),
+  'piano-chord':  structuredClone(EMPTY),
+  'piano-prog':   structuredClone(EMPTY),
+  'guitar-note':  structuredClone(EMPTY),
   'guitar-chord': structuredClone(EMPTY),
-  'guitar-prog': structuredClone(EMPTY),
+  'guitar-prog':  structuredClone(EMPTY),
+  'bass-note':    structuredClone(EMPTY),
+  'bass-roots':   structuredClone(EMPTY),
 };
 
 function todayISO(): string {
@@ -104,6 +105,8 @@ export function StatsProvider({ children }: { children: ReactNode }) {
       'guitar-note':  persisted['guitar-note']  ?? structuredClone(EMPTY),
       'guitar-chord': persisted['guitar-chord'] ?? structuredClone(EMPTY),
       'guitar-prog':  persisted['guitar-prog']  ?? structuredClone(EMPTY),
+      'bass-note':    persisted['bass-note']    ?? structuredClone(EMPTY),
+      'bass-roots':   persisted['bass-roots']   ?? structuredClone(EMPTY),
     };
   });
 
