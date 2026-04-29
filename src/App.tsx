@@ -4,6 +4,7 @@ import { SettingsProvider } from './state/settings';
 import { StatsProvider } from './state/stats';
 import { Home } from './views/Home';
 import { Exercise } from './views/Exercise';
+import { SettingsView } from './views/Settings';
 
 export default function App() {
   const route = useRoute();
@@ -21,8 +22,7 @@ export default function App() {
       view = <Exercise mode={route.mode} />;
       break;
     case 'settings':
-      // M3 will build this; for now fall through to home.
-      view = <Home />;
+      view = <SettingsView />;
       break;
   }
 

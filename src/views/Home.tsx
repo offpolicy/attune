@@ -1,7 +1,7 @@
 import { useStats } from '../state/stats';
 import { useSettings } from '../state/settings';
 import { ModeCard } from '../components/ModeCard';
-import { navigateToMode } from '../lib/route';
+import { navigateToMode, navigateToSettings } from '../lib/route';
 import { levelLabel } from '../exercises/levels';
 import type { Mode } from '../types';
 import type { ModeStats } from '../state/stats';
@@ -34,7 +34,14 @@ export function Home() {
   const { settings } = useSettings();
 
   return (
-    <main className="mx-auto max-w-2xl px-6 pt-16 pb-24 sm:pt-24">
+    <main className="mx-auto max-w-2xl px-6 pt-16 pb-24 sm:pt-24 relative">
+      <button
+        onClick={navigateToSettings}
+        aria-label="settings"
+        className="absolute top-6 right-6 text-paper-muted hover:text-paper transition-colors text-xl"
+      >
+        ⚙
+      </button>
       <header className="mb-12">
         <h1
           className="font-display font-semibold leading-none tracking-tight"

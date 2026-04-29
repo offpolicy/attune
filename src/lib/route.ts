@@ -36,6 +36,10 @@ export function navigateToMode(mode: Mode): void {
   window.location.hash = '/' + mode;
 }
 
+export function navigateToSettings(): void {
+  window.location.hash = '/settings';
+}
+
 export function useRoute(): Route {
   const [route, setRoute] = useState(parseRoute);
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { navigateHome } from '../../lib/route';
+import { navigateHome, navigateToSettings } from '../../lib/route';
 import { levelLabel } from '../../exercises/levels';
 import type { Level } from '../../state/settings';
 import type { ModeStats } from '../../state/stats';
@@ -25,7 +25,13 @@ export function ExerciseHeader({
           level {level === 'custom' ? '·' : level} · {levelLabel(level)}
         </p>
       </div>
-      <span className="w-6" />
+      <button
+        onClick={navigateToSettings}
+        aria-label="settings"
+        className="text-paper-muted hover:text-paper transition-colors text-xl px-2 -mr-2"
+      >
+        ⚙
+      </button>
     </header>
   );
 }
