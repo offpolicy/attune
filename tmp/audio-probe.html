@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>attune · audio probe</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink-900: #0e0d18;
+        --ink-800: #1c1a28;
+        --ink-700: #2a2638;
+        --lamp-400: #e8b86a;
+        --leaf-400: #8fbf9c;
+        --paper: #ece6d7;
+        --paper-muted: #9a9384;
+        --paper-faint: #56524a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100svh;
+        background: var(--ink-900);
+        color: var(--paper);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 4rem 1.5rem;
+      }
+      h1 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 600;
+        font-size: clamp(2rem, 6vw, 3rem);
+        margin: 0 0 0.5rem;
+        letter-spacing: -0.02em;
+      }
+      .lede { color: var(--paper-muted); margin: 0 0 2.5rem; max-width: 60ch; }
+      section {
+        border: 1px solid var(--ink-700);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        background: rgba(255,255,255,0.012);
+      }
+      h2 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 500;
+        font-size: 1.125rem;
+        margin: 0 0 1rem;
+        color: var(--paper);
+      }
+      .row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+      button {
+        font: inherit;
+        font-weight: 500;
+        background: var(--lamp-400);
+        color: var(--ink-900);
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        cursor: pointer;
+        transition: opacity 120ms ease;
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--paper);
+        border: 1px solid var(--ink-700);
+      }
+      button:hover:not(:disabled) { opacity: 0.9; }
+      button:disabled { opacity: 0.4; cursor: not-allowed; }
+      .status {
+        font-size: 0.875rem;
+        color: var(--paper-muted);
+        margin-top: 0.75rem;
+      }
+      .status.ready { color: var(--leaf-400); }
+      .status.err { color: #d68a8a; }
+      kbd {
+        font-family: ui-monospace, monospace;
+        font-size: 0.85em;
+        background: var(--ink-800);
+        padding: 0.05em 0.4em;
+        border-radius: 4px;
+        color: var(--paper-muted);
+      }
+      .footer {
+        margin-top: 3rem;
+        font-size: 0.875rem;
+        color: var(--paper-faint);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>audio probe<span style="color: var(--lamp-400);">.</span></h1>
+      <p class="lede">
+        M1 listening gate. Before committing to <kbd>smplr</kbd> as the audio
+        layer, hear it for yourself. Compare each button's output to a real
+        piano / real guitar in your head. If the guitar sounds plasticky or the
+        piano lifeless, we fall back to pre-rendered samples.
+      </p>
+
+      <section>
+        <h2>piano · acoustic grand</h2>
+        <div class="row">
+          <button id="piano-c4" disabled>play C4</button>
+          <button id="piano-cmaj" disabled>play C major chord</button>
+          <button id="piano-cmaj-arp" disabled>arpeggiate C major</button>
+        </div>
+        <div class="status" id="piano-status">loading samples…</div>
+      </section>
+
+      <section>
+        <h2>guitar · acoustic steel</h2>
+        <div class="row">
+          <button id="guitar-e2" disabled>play E2</button>
+          <button id="guitar-emaj" disabled>strum E major (down)</button>
+          <button id="guitar-emaj-up" disabled>strum E major (up)</button>
+          <button id="guitar-amin" disabled>strum A minor</button>
+        </div>
+        <div class="status" id="guitar-status">loading samples…</div>
+      </section>
+
+      <section>
+        <h2>side-by-side</h2>
+        <div class="row">
+          <button id="cmp-c-major" class="secondary" disabled>
+            piano C major → guitar C major
+          </button>
+        </div>
+        <div class="status" id="cmp-status">load both above first</div>
+      </section>
+
+      <p class="footer">
+        verdict checklist:
+        <br />· piano: warm attack, no obvious aliasing, decay sounds natural
+        <br />· guitar: identifiable as a steel-string, strum has dimension (not all 6 notes at once), chord <em>quality</em> (major vs. minor) is unmistakable
+        <br />· both: no clicks, no pops, no obvious looping artifacts
+      </p>
+    </main>
+
+    <script type="module">
+      import { Soundfont } from "https://unpkg.com/smplr/dist/index.mjs";
+
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+
+      // iOS / strict-mode browsers: AudioContext starts suspended until a user gesture.
+      // Resume on the first click anywhere.
+      document.addEventListener("click", () => {
+        if (ac.state === "suspended") ac.resume();
+      }, { once: true });
+
+      const piano = new Soundfont(ac, { instrument: "acoustic_grand_piano" });
+      const guitar = new Soundfont(ac, { instrument: "acoustic_guitar_steel" });
+
+      const setStatus = (id, msg, cls) => {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.className = "status" + (cls ? " " + cls : "");
+      };
+
+      const enable = (...ids) => ids.forEach((id) => {
+        const b = document.getElementById(id);
+        if (b) b.disabled = false;
+      });
+
+      // Piano-major chord: C4 E4 G4
+      const C_MAJOR_PIANO = ["C4", "E4", "G4"];
+      // Guitar E major open voicing (low to high): E2 B2 E3 G#3 B3 E4
+      const E_MAJOR_GUITAR = ["E2", "B2", "E3", "G#3", "B3", "E4"];
+      // Guitar A minor open voicing (low to high): A2 E3 A3 C4 E4
+      const A_MINOR_GUITAR = ["A2", "E3", "A3", "C4", "E4"];
+      // Guitar C major open voicing (low to high): C3 E3 G3 C4 E4
+      const C_MAJOR_GUITAR = ["C3", "E3", "G3", "C4", "E4"];
+
+      const playSingle = (instr, note) => {
+        instr.start({ note, velocity: 90, duration: 1.5 });
+      };
+
+      const playChord = (instr, notes, opts = {}) => {
+        const { stagger = 0, velocity = 90, duration = 1.6 } = opts;
+        const t0 = ac.currentTime + 0.02;
+        notes.forEach((note, i) => {
+          instr.start({ note, time: t0 + i * stagger, velocity, duration });
+        });
+      };
+
+      // ---------- piano ----------
+      piano.load.then(() => {
+        setStatus("piano-status", "ready · click any button above", "ready");
+        enable("piano-c4", "piano-cmaj", "piano-cmaj-arp");
+        document.getElementById("piano-c4").onclick = () => playSingle(piano, "C4");
+        document.getElementById("piano-cmaj").onclick = () => playChord(piano, C_MAJOR_PIANO);
+        document.getElementById("piano-cmaj-arp").onclick = () =>
+          playChord(piano, C_MAJOR_PIANO, { stagger: 0.18 });
+      }).catch((e) => setStatus("piano-status", "load failed: " + e.message, "err"));
+
+      // ---------- guitar ----------
+      guitar.load.then(() => {
+        setStatus("guitar-status", "ready · click any button above", "ready");
+        enable("guitar-e2", "guitar-emaj", "guitar-emaj-up", "guitar-amin");
+        document.getElementById("guitar-e2").onclick = () => playSingle(guitar, "E2");
+        document.getElementById("guitar-emaj").onclick = () =>
+          playChord(guitar, E_MAJOR_GUITAR, { stagger: 0.022 });
+        document.getElementById("guitar-emaj-up").onclick = () =>
+          playChord(guitar, [...E_MAJOR_GUITAR].reverse(), { stagger: 0.022 });
+        document.getElementById("guitar-amin").onclick = () =>
+          playChord(guitar, A_MINOR_GUITAR, { stagger: 0.022 });
+      }).catch((e) => setStatus("guitar-status", "load failed: " + e.message, "err"));
+
+      // ---------- side-by-side ----------
+      Promise.all([piano.load, guitar.load]).then(() => {
+        setStatus("cmp-status", "ready · A/B comparison", "ready");
+        enable("cmp-c-major");
+        document.getElementById("cmp-c-major").onclick = () => {
+          playChord(piano, C_MAJOR_PIANO);
+          // Guitar comes in 1.8s later for clean comparison
+          setTimeout(() => playChord(guitar, C_MAJOR_GUITAR, { stagger: 0.022 }), 1800);
+        };
+      });
+    </script>
+  </body>
+</html>

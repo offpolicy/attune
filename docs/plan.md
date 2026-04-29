@@ -31,7 +31,7 @@ References:
 | Language | **TypeScript** | Catches scale-degree / interval math errors before runtime. |
 | UI framework | **React 18** | Three modes share a shell; component model fits. Could be Preact later if bundle size matters. |
 | Styling | **Tailwind v4** with `@theme` design tokens | Matches `design.md` palette tokens cleanly. CSS variables stay first-class. |
-| Audio | **Tone.js** + **soundfont-player** (or Tone.js Sampler with soundfont samples) | Tone.js for scheduling and envelopes; soundfont-player for realistic piano + acoustic-guitar timbres without ~50MB sample packs. |
+| Audio | **smplr** (`Soundfont` class) | Maintained successor to the archived `soundfont-player`. Loads General MIDI soundfonts on demand, handles scheduling internally via `start({ time, duration })`. MIT-licensed. Acceptable timbre for both piano and acoustic guitar verified at M1. |
 | Routing | **`react-router` `HashRouter`** | Hash routes work on GitHub Pages with no rewrite rules. |
 | State | `useReducer` + `localStorage` adapter | Three small state machines (active question, settings, stats); Redux/Zustand is overkill. |
 | Testing | **Vitest** for exercise math; manual + Playwright smoke for audio | Audio is hard to unit-test; cover what matters and ear-test the rest. |
@@ -39,17 +39,19 @@ References:
 
 ### The audio decision in detail
 
-**Choice: SoundFont via `soundfont-player`** (or load `.sf2`-derived samples into Tone.js Sampler).
+**Choice: `smplr`'s `Soundfont` class** loading General MIDI instruments from Benjamin Gleitzman's hosted soundfont collection.
 
-- Piano: `acoustic_grand_piano` from MuseScore General SoundFont — public-domain, well-known, ~few hundred KB after extracting just one instrument.
-- Guitar: `acoustic_guitar_steel` or `acoustic_guitar_nylon` from the same source.
-- Strummed chords are constructed in code: schedule note-ons across 6 strings with ~15ms stagger between strings. Up-strum vs. down-strum is just stagger direction.
+- Piano: `acoustic_grand_piano`.
+- Guitar: `acoustic_guitar_steel`.
+- Strummed chords are constructed in code: schedule note-ons across the strings of an open voicing with ~22ms stagger via `start({ note, time })`. Up-strum vs. down-strum is just stagger direction.
+
+**Why `smplr` over `soundfont-player`:** the original `soundfont-player` was archived May 2023; `smplr` is the same author's maintained successor with a cleaner `start({ note, time, velocity, duration })` API. Drop-in replacement for our needs.
 
 **Why not pre-rendered MP3s per chord:** generalizing to the progression mode would require another N×N×K explosion of clips. SoundFont generalizes for free — any chord, any key, any voicing.
 
-**Why not pure synthesis (Tone.PolySynth):** chord *quality* recognition leans on partials and timbre. Synth chords sound like synth chords, not like guitars. Users would learn to identify "the synth's Am" not "an Am."
+**Why not pure synthesis:** chord *quality* recognition leans on partials and timbre. Synth chords sound like synth chords, not like guitars. Users would learn to identify "the synth's Am" not "an Am."
 
-Verify before committing: write a 50-line `tmp/audio-probe.html` that loads `soundfont-player`, plays a C major piano chord and a strummed E major guitar chord, and listen. If it doesn't sound acceptable, fall back to a curated sample set (one MP3 per voicing, accept the size cost).
+**Verified at M1 (2026-04-29):** `tmp/audio-probe.html` ships a standalone listening test using smplr from CDN. Piano and acoustic-steel guitar both came back acceptable; quality is fine for ear training.
 
 ## Architecture
 
