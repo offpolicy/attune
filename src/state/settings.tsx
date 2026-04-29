@@ -9,11 +9,9 @@ import { readJSON, writeJSON } from '../lib/storage';
 import type { Midi } from '../audio/theory';
 
 export type Level = 1 | 2 | 3 | 4 | 5 | 'custom';
-export type ReferencePolicy = 'every' | 'first' | 'never';
 
 export type PianoNoteKnobs = {
   pool: 'tonic-triad' | 'diatonic' | 'diatonic+accidentals' | 'chromatic';
-  reference: ReferencePolicy;
   range: [Midi, Midi];
   labels: 'solfege' | 'numeric';
 };
@@ -44,7 +42,6 @@ export const DEFAULT_SETTINGS: Settings = {
     level: 1,
     knobs: {
       pool: 'tonic-triad',
-      reference: 'every',
       range: [60, 72],
       labels: 'solfege',
     },

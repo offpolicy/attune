@@ -91,42 +91,42 @@ export type PianoNoteQuestion = {
   tonicMidi: Midi;
   targetMidi: Midi;
   degreeLabel: string;
-  playReference: boolean;
 };
 
 export type PianoNoteAnswer = string;
 
 export function generatePianoNoteQuestion(
   knobs: PianoNoteKnobs,
-  isFirstOfSession: boolean,
 ): PianoNoteQuestion {
   const pool = poolDegrees(knobs);
   const degree = pool[Math.floor(Math.random() * pool.length)]!;
   const tonicMidi = knobs.range[0];
   const targetMidi = tonicMidi + degree.semitones;
-
-  let playReference: boolean;
-  switch (knobs.reference) {
-    case 'every': playReference = true; break;
-    case 'first': playReference = isFirstOfSession; break;
-    case 'never': playReference = false; break;
-  }
-
-  return { tonicMidi, targetMidi, degreeLabel: degree.label, playReference };
+  return { tonicMidi, targetMidi, degreeLabel: degree.label };
 }
 
-export async function playPianoNoteQuestion(q: PianoNoteQuestion): Promise<void> {
+export async function playPianoTarget(q: PianoNoteQuestion): Promise<void> {
   await unlockAudio();
   const piano = await loadInstrument('piano');
   const ctx = getAudioContext();
-  const t0 = ctx.currentTime + 0.05;
+  piano.start({
+    note: midiToNote(q.targetMidi),
+    time: ctx.currentTime + 0.05,
+    duration: 1.4,
+    velocity: 90,
+  });
+}
 
-  if (q.playReference) {
-    piano.start({ note: midiToNote(q.tonicMidi), time: t0,       duration: 0.9, velocity: 80 });
-    piano.start({ note: midiToNote(q.targetMidi), time: t0 + 1.2, duration: 1.4, velocity: 90 });
-  } else {
-    piano.start({ note: midiToNote(q.targetMidi), time: t0,       duration: 1.4, velocity: 90 });
-  }
+export async function playPianoTonic(q: PianoNoteQuestion): Promise<void> {
+  await unlockAudio();
+  const piano = await loadInstrument('piano');
+  const ctx = getAudioContext();
+  piano.start({
+    note: midiToNote(q.tonicMidi),
+    time: ctx.currentTime + 0.05,
+    duration: 1.0,
+    velocity: 80,
+  });
 }
 
 export function isCorrectPianoNote(q: PianoNoteQuestion, a: PianoNoteAnswer): boolean {

@@ -112,23 +112,36 @@ All three exercises share this layout. Only the answer area changes.
 
 ### Keyboard shortcuts (desktop)
 
-- `space` — play / loop
-- `1`–`9` — pick answer chip in order
+- `space` — play / replay target
+- `d` — play `do` (tonic reference)
+- `1`–`N` — pick the Nth enabled note in pitch order (left-to-right on the keyboard)
 - `enter` — next take
 
-## 3. Piano · single note — answer area
+## 3. Piano · single note — playback + answer area
+
+Two playback buttons:
+- **▶ play** — plays only the **target** note.
+- **▶ do** — plays the **tonic** (reference). Always available, on demand.
+- **↻ loop** — re-plays the target after the first `play`.
+
+There is no auto-played reference; the user reaches for `▶ do` whenever they want a key anchor. This is the entire reference-policy model — manual, not configurable.
+
+Answer area is a one-octave **piano keyboard**, not a chip grid:
 
 ```
-        ─── answer area ───
-
-       [ do ] [ re ] [ mi ]
-       [ fa ] [ sol] [ la ]
-            [ ti ]
+   ┌──┐ ┌──┐    ┌──┐ ┌──┐ ┌──┐
+   │  │ │  │    │  │ │  │ │  │
+┌──┴┐ └─┴┐ ├────┴┐ └─┴┐ └─┴┐ ├────┐
+│do │   │mi│  fa │   │   │   │ti │
+└────┴────┴────┴────┴────┴────┴────┘
+   C    D    E    F    G    A    B
 ```
 
-- Reference tonic plays first by default, then the target note. (Configurable — see Settings.)
-- Answers are solfege (or 1–7, toggle in advanced settings).
-- Pool, range, and reference behavior all driven by the current level.
+- White keys = diatonic degrees (do/re/mi/fa/sol/la/ti).
+- Black keys = chromatic accidentals; only enabled at higher levels.
+- Keys outside the active pool are visibly muted and unclickable.
+- Selected key fills with `--lamp-400`.
+- Pool, range, and label scheme (solfege vs 1–7) all driven by the current level.
 
 ## 4. Guitar · chord — answer area
 
@@ -211,15 +224,17 @@ Drawer from the right on desktop, full screen on mobile. Most users only touch *
 - Changing a fine-tune knob individually puts that mode into a `custom` level state (level slider shows `· custom`).
 - All settings persist in localStorage. Defaults give a usable v1 with no configuration (everyone starts at level 1 / `warmup`).
 
-### Level → knob presets (example: piano · single note)
+### Level → knob presets (piano · single note)
 
-| Level | Pool | Reference | Range |
-|---|---|---|---|
-| 1 warmup | tonic triad (do/mi/sol) | every take | C4–C5 |
-| 2 session | full diatonic | every take | C4–C5 |
-| 3 gig | full diatonic | first take of session | C4–C5 |
-| 4 studio | + accidentals | first take of session | C3–C5 |
-| 5 mastering | full chromatic | never | C3–C5 |
+| Level | Pool | Range |
+|---|---|---|
+| 1 warmup | tonic triad (do/mi/sol) | C4–C5 |
+| 2 session | full diatonic (do/re/mi/fa/sol/la/ti) | C4–C5 |
+| 3 gig | full diatonic | C4–C5 |
+| 4 studio | + accidentals | C3–C5 |
+| 5 mastering | full chromatic | C3–C5 |
+
+The reference tonic is no longer level-bound — it is always available via the `▶ do` button. Levels 3–5 are still distinct from 1–2 because they expand the pool / range; the in-progress goal in the gig→mastering progression is to lean less on the `do` button by ear, not to have it taken away.
 
 The other two modes have analogous level tables (defined in `design.md` / future settings spec).
 

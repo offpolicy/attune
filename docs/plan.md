@@ -108,14 +108,15 @@ Each mode has a `level` (1–5) that drives a set of fine-tune knobs through a p
 
 ```ts
 type Level = 1 | 2 | 3 | 4 | 5 | 'custom';
-type ReferencePolicy = 'every' | 'first' | 'never';
 
 type PianoNoteKnobs = {
-  pool:      'tonic-triad' | 'diatonic' | 'diatonic+accidentals' | 'chromatic';
-  reference: ReferencePolicy;
-  range:     [Midi, Midi];
-  labels:    'solfege' | 'numeric';
+  pool:   'tonic-triad' | 'diatonic' | 'diatonic+accidentals' | 'chromatic';
+  range:  [Midi, Midi];
+  labels: 'solfege' | 'numeric';
 };
+
+// Reference tonic is no longer a knob — it's always available as a manual
+// `▶ do` button on the exercise screen. See wireframe.md.
 
 type GuitarChordKnobs = {
   pool:    ChordName[];

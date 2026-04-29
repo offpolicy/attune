@@ -8,7 +8,8 @@ import { levelLabel } from '../exercises/levels';
 import { loadInstrument } from '../audio/instrument';
 import {
   generatePianoNoteQuestion,
-  playPianoNoteQuestion,
+  playPianoTarget,
+  playPianoTonic,
   isCorrectPianoNote,
   describePianoNote,
   poolDegrees,
@@ -44,24 +45,37 @@ function PianoNoteExercise() {
   const [takeNumber, setTakeNumber] = useState(1);
   const [exState, setExState] = useState<ExerciseState>(() => ({
     phase: 'idle',
-    question: generatePianoNoteQuestion(knobs, true),
+    question: generatePianoNoteQuestion(knobs),
   }));
-  const [playing, setPlaying] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const degreeOptions = useMemo(() => poolDegrees(knobs), [knobs]);
+  const orderedOptions = useMemo(
+    () => [...degreeOptions].sort((a, b) => a.semitones - b.semitones),
+    [degreeOptions],
+  );
 
   // Preload piano samples on mount so first play has minimal delay.
   useEffect(() => {
     loadInstrument('piano');
   }, []);
 
-  const play = useCallback(async () => {
-    setPlaying(true);
+  const playTarget = useCallback(async () => {
+    setBusy(true);
     try {
-      await playPianoNoteQuestion(exState.question);
+      await playPianoTarget(exState.question);
     } finally {
-      setPlaying(false);
+      setBusy(false);
       setExState((s) => (s.phase === 'idle' ? { ...s, phase: 'played' } : s));
+    }
+  }, [exState.question]);
+
+  const playTonic = useCallback(async () => {
+    setBusy(true);
+    try {
+      await playPianoTonic(exState.question);
+    } finally {
+      setBusy(false);
     }
   }, [exState.question]);
 
@@ -79,17 +93,23 @@ function PianoNoteExercise() {
     setTakeNumber((n) => n + 1);
     setExState({
       phase: 'idle',
-      question: generatePianoNoteQuestion(knobs, false),
+      question: generatePianoNoteQuestion(knobs),
     });
   }, [knobs]);
 
-  // Keyboard shortcuts: space (play/loop), 1-9 (pick), enter (next).
+  // Keyboard shortcuts: space = play target, d = play tonic, 1-N = pick Nth
+  // enabled note in pitch order, enter = next take after answering.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
       if (e.code === 'Space') {
         e.preventDefault();
-        if (exState.phase === 'idle' || exState.phase === 'played') void play();
+        if (exState.phase !== 'answered') void playTarget();
+        return;
+      }
+      if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        void playTonic();
         return;
       }
       if (e.key === 'Enter' && exState.phase === 'answered') {
@@ -101,15 +121,15 @@ function PianoNoteExercise() {
       if (
         !Number.isNaN(num) &&
         num >= 1 &&
-        num <= degreeOptions.length &&
+        num <= orderedOptions.length &&
         exState.phase === 'played'
       ) {
-        submit(degreeOptions[num - 1]!.label);
+        submit(orderedOptions[num - 1]!.label);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [exState.phase, degreeOptions, play, submit, next]);
+  }, [exState.phase, orderedOptions, playTarget, playTonic, submit, next]);
 
   const modeStats = stats['piano-note'];
   const todayPct =
@@ -136,23 +156,26 @@ function PianoNoteExercise() {
         <span className="w-6" />
       </header>
 
-      <section className="flex flex-col items-center gap-4 py-8">
+      <section className="flex flex-col items-center gap-4 py-4">
         <Button
-          onClick={play}
-          disabled={playing || exState.phase === 'answered'}
+          onClick={playTarget}
+          disabled={busy || exState.phase === 'answered'}
         >
           ▶ {exState.phase === 'idle' ? 'play' : 'replay'}
         </Button>
 
-        <div className="h-12 flex items-center">
+        <div className="flex items-center gap-3">
+          <Button variant="secondary" onClick={playTonic} disabled={busy}>
+            ▶ do
+          </Button>
           {exState.phase !== 'idle' && (
-            <Button variant="secondary" onClick={play} disabled={playing}>
+            <Button variant="secondary" onClick={playTarget} disabled={busy}>
               ↻ loop
             </Button>
           )}
         </div>
 
-        <div className="my-6">
+        <div className="my-8 w-full">
           <PianoNoteAnswers
             options={degreeOptions}
             disabled={exState.phase !== 'played'}
@@ -185,7 +208,7 @@ function PianoNoteExercise() {
         </div>
       </section>
 
-      <footer className="mt-16 text-center font-sans text-xs uppercase tracking-[0.18em] text-paper-faint tabular-nums">
+      <footer className="mt-12 text-center font-sans text-xs uppercase tracking-[0.18em] text-paper-faint tabular-nums">
         take {takeNumber} · streak {modeStats.streakDays} ·{' '}
         {modeStats.today.correct}/{modeStats.today.total} · {todayPct}%
       </footer>

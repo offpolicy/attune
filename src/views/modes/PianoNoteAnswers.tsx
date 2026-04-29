@@ -1,4 +1,4 @@
-import { AnswerChip } from '../../components/AnswerChip';
+import { PianoKeyboard } from '../../components/PianoKeyboard';
 import type { DegreeOption } from '../../exercises/pianoNote';
 
 type Props = {
@@ -10,16 +10,6 @@ type Props = {
 
 export function PianoNoteAnswers({ options, disabled, picked, onPick }: Props) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 max-w-md">
-      {options.map((opt) => (
-        <AnswerChip
-          key={opt.label}
-          label={opt.label}
-          selected={picked === opt.label}
-          onClick={() => onPick(opt.label)}
-          disabled={disabled}
-        />
-      ))}
-    </div>
+    <PianoKeyboard pool={options} disabled={disabled} picked={picked} onPick={onPick} />
   );
 }
