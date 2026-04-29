@@ -20,17 +20,17 @@ Dark only for v1. Light mode is deferred.
 |---|---|---|
 | `--ink-950` | `#08070d` | Page background base |
 | `--ink-900` | `#0e0d18` | Default surface — cool blue-violet, not pure black |
-| `--ink-850` | `#15131f` | Card surface |
-| `--ink-800` | `#1c1a28` | Raised surface, hover |
-| `--ink-700` | `#2a2638` | Borders, dividers |
+| `--ink-850` | `#1a1828` | Card surface (~1.5:1 against ink-900, visibly distinct) |
+| `--ink-800` | `#25223a` | Raised surface, hover |
+| `--ink-700` | `#3a3552` | Borders, dividers (readable hairline at 1px) |
 | `--lamp-300` | `#f3d59c` | Highlight on accent (focused button text) |
 | `--lamp-400` | `#e8b86a` | Primary accent — amber lamplight |
 | `--lamp-500` | `#cc9846` | Pressed / active accent |
 | `--lamp-600` | `#996f2f` | Muted accent (disabled) |
 | `--leaf-400` | `#8fbf9c` | Correct-answer feedback only — never decorative |
-| `--paper` | `#ece6d7` | Primary text (warm off-white) |
-| `--paper-muted` | `#9a9384` | Secondary text |
-| `--paper-faint` | `#56524a` | Tertiary text, hairlines |
+| `--paper` | `#ece6d7` | Primary text (warm off-white) — ~17:1 on ink-900 |
+| `--paper-muted` | `#b0a999` | Secondary text — ~9:1 on ink-900 |
+| `--paper-faint` | `#807a6c` | Tertiary text, hairlines — ~5:1 on ink-900 (AA pass) |
 
 **Rules**
 - One accent (`lamp`). No secondary brand color.

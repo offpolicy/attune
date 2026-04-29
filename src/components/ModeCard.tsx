@@ -21,7 +21,7 @@ export function ModeCard({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="group block w-full text-left rounded-2xl border border-ink-700 bg-ink-850 p-6 transition-colors hover:border-lamp-400/30 hover:bg-ink-800 disabled:hover:border-ink-700 disabled:hover:bg-ink-850 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-lamp-300 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900"
+      className="group block w-full text-left rounded-2xl border border-ink-700 bg-ink-850 p-6 transition-colors hover:border-lamp-400/40 hover:bg-ink-800 disabled:hover:border-ink-700 disabled:hover:bg-ink-850 disabled:opacity-70 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-lamp-300 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900"
     >
       <div className="flex items-baseline gap-3">
         <span className="font-display italic text-paper-faint text-sm w-7 shrink-0">
