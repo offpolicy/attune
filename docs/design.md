@@ -79,12 +79,15 @@ Italic is reserved for **musical expression** — secondary descriptors on cards
 
 **Bar-line dividers.** Between sections, prefer a single tall hairline `│` 24px tall in `--paper-faint` to a horizontal rule. Subtle musical reference, no kitsch.
 
-**Cards** on the home page laid out like entries in a recital program: small ordinal number, title in display weight, italic subtitle, faint stat line.
+**Cards** are laid out like entries in a recital program: small ordinal number, title in display weight, italic subtitle, faint stat line. The same card primitive is used on both picker screens (home for instruments, instrument page for modes); only the title / subtitle / stat-line content differs. Disabled "(coming soon)" cards on the mode picker drop the stat line, fade the title, and remove the hover state — see `wireframe.md`.
 
 ```
-i.   piano
-     name the scale degree
-     best 92% · streak 4
+i.   piano                        (home — instrument picker)
+     keyboard exercises
+
+ii.  single chord                 (instrument page — mode picker)
+     name the chord
+     level 2 · session · best 78%
 ```
 
 ## Voice
@@ -141,10 +144,11 @@ Animations respect `prefers-reduced-motion`: durations collapse to 0, opacity tr
 - Hover: border becomes `--lamp-400`. Selected (in progression mode): filled `--lamp-400`/`--ink-950`.
 - Wrong answer flash: border `--paper-muted` for 600ms, then return to default. Don't use red.
 
-**Mode card** (home)
+**Mode card** (home + instrument page)
 - Surface `--ink-850`, border `--ink-700`, 16px radius
 - Hover: surface `--ink-800`, border `--lamp-400` at 30% opacity
 - 24px padding, generous
+- **Disabled variant** (used for unimplemented matrix cells on the mode picker): title and subtitle in `--paper-faint`, no hover state, cursor `default`. Stat line replaced by `coming soon` in `--paper-faint`. The card is still rendered at full size — the matrix shape is the point.
 
 **Feedback line**
 - Single line, `body` size, no icon background

@@ -1,5 +1,5 @@
 import { unlockAudio, loadInstrument } from '../audio/instrument';
-import { CHORD_VOICINGS, playStrum, type ChordName } from './chords';
+import { voicingFor, playStrum, type ChordName } from './chords';
 import type { GuitarChordKnobs } from '../state/settings';
 
 export type GuitarChordQuestion = {
@@ -19,8 +19,7 @@ export function generateGuitarChordQuestion(
 export async function playGuitarChord(q: GuitarChordQuestion): Promise<void> {
   await unlockAudio();
   await loadInstrument('guitar');
-  const notes = CHORD_VOICINGS[q.chord];
-  await playStrum(notes);
+  await playStrum(voicingFor(q.chord));
 }
 
 export function isCorrectGuitarChord(

@@ -27,8 +27,14 @@ const EMPTY: ModeStats = {
   today: { correct: 0, total: 0, dateISO: '' },
 };
 
+// Stats is keyed by Mode, which is the full instrument×activity matrix (6 cells).
+// The three v2-deferred cells get inert empty entries so consumers can read
+// stats[mode] uniformly without undefined checks. They're never written to.
 export const DEFAULT_STATS: Stats = {
   'piano-note': structuredClone(EMPTY),
+  'piano-chord': structuredClone(EMPTY),
+  'piano-prog': structuredClone(EMPTY),
+  'guitar-note': structuredClone(EMPTY),
   'guitar-chord': structuredClone(EMPTY),
   'guitar-prog': structuredClone(EMPTY),
 };
@@ -92,9 +98,12 @@ export function StatsProvider({ children }: { children: ReactNode }) {
   const [stats, setStats] = useState<Stats>(() => {
     const persisted = readJSON<Partial<Stats>>(STORAGE_KEY, {});
     return {
-      'piano-note': persisted['piano-note'] ?? structuredClone(EMPTY),
+      'piano-note':   persisted['piano-note']   ?? structuredClone(EMPTY),
+      'piano-chord':  persisted['piano-chord']  ?? structuredClone(EMPTY),
+      'piano-prog':   persisted['piano-prog']   ?? structuredClone(EMPTY),
+      'guitar-note':  persisted['guitar-note']  ?? structuredClone(EMPTY),
       'guitar-chord': persisted['guitar-chord'] ?? structuredClone(EMPTY),
-      'guitar-prog': persisted['guitar-prog'] ?? structuredClone(EMPTY),
+      'guitar-prog':  persisted['guitar-prog']  ?? structuredClone(EMPTY),
     };
   });
 

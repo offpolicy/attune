@@ -8,6 +8,7 @@ import {
 import { readJSON, writeJSON } from '../lib/storage';
 import type { Midi } from '../audio/theory';
 import type { ChordName, ProgKey, Roman } from '../exercises/chords';
+import type { QualityScheme } from '../exercises/progressionTemplates';
 
 export type Level = 1 | 2 | 3 | 4 | 5 | 'custom';
 
@@ -27,6 +28,7 @@ export type GuitarProgKnobs = {
   length: 3 | 4;
   pool: Roman[];
   tempo: 'slow' | 'medium' | 'fast';
+  qualityScheme: QualityScheme;
   showRoman: boolean;
 };
 
@@ -58,6 +60,7 @@ export const DEFAULT_SETTINGS: Settings = {
       length: 3,
       pool: ['I', 'IV', 'V'],
       tempo: 'slow',
+      qualityScheme: 'triads',
       showRoman: false,
     },
   },

@@ -1,10 +1,26 @@
 import { AnswerChip } from '../../components/AnswerChip';
 import type { ChordName } from '../../exercises/chords';
 
+// Every ChordName any qualityScheme can produce against the diatonic Roman
+// pool in C, ordered by Roman function (I, ii, iii, IV, V, vi, vii°) and
+// then by harmonic colour (triad → 7th → extension → altered). The pool
+// prop carries the active scheme's possibilities; chips outside the pool
+// are filtered out, so this ordering is what the user sees per level.
 const DISPLAY_ORDER: ChordName[] = [
-  'C', 'D', 'E', 'F', 'G', 'A',
-  'Am', 'Dm', 'Em',
-  'Bdim',
+  // I
+  'C', 'Cmaj7', 'Cmaj9', 'C6/9',
+  // ii
+  'Dm', 'Dm7', 'Dm9',
+  // iii
+  'Em', 'Em7',
+  // IV
+  'F', 'Fmaj7', 'Fmaj9', 'F6/9',
+  // V
+  'G', 'G7', 'G9', 'G13', 'G7b9', 'G7#9',
+  // vi
+  'Am', 'Am7', 'Am9',
+  // vii°
+  'Bdim', 'Bm7b5',
 ];
 
 type Props = {

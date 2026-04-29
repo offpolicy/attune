@@ -1,19 +1,22 @@
-import { navigateHome, navigateToSettings } from '../../lib/route';
+import { navigateToInstrument, navigateToSettings } from '../../lib/route';
 import { levelLabel } from '../../exercises/levels';
 import type { Level } from '../../state/settings';
 import type { ModeStats } from '../../state/stats';
+import type { Instrument } from '../../types';
 
 export function ExerciseHeader({
   title,
   level,
+  instrument,
 }: {
   title: string;
   level: Level;
+  instrument: Instrument;
 }) {
   return (
     <header className="mb-12 flex items-center justify-between">
       <button
-        onClick={navigateHome}
+        onClick={() => navigateToInstrument(instrument)}
         aria-label="back"
         className="text-paper-muted hover:text-paper transition-colors text-2xl px-2 -ml-2"
       >

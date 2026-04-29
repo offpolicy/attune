@@ -100,7 +100,7 @@ export function PianoNoteExercise() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 pt-8 pb-24">
-      <ExerciseHeader title="piano · single note" level={level} />
+      <ExerciseHeader title="piano · single note" level={level} instrument="piano" />
 
       <section className="flex flex-col items-center gap-4 py-4">
         <Button

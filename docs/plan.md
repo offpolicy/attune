@@ -5,14 +5,16 @@ A concrete, milestone-driven plan to build **attune** from empty directory to de
 References:
 - [`./wireframe.md`](./wireframe.md) — screen layouts and interactions
 - [`./design.md`](./design.md) — visual language
+- [`./progression-algorithm.md`](./progression-algorithm.md) — how `guitar-prog` builds questions (template-based v1, weighted-transition v2)
 
 ## Goals
 
-1. Three working exercise modes: piano single note, guitar chord, guitar progression.
-2. Deployed as a static site at GitHub Pages.
-3. No backend, no accounts, all state in `localStorage`.
-4. Mobile-friendly, keyboard-accessible.
-5. Audio that sounds like real instruments — sine waves are insufficient for chord recognition.
+1. Three working exercise modes within an **instrument × activity** matrix: piano single note, guitar chord, guitar progression. The matrix is 2 × 3 in v1 with three cells filled; the other three (`piano · chord`, `piano · progression`, `guitar · note`) are visible as "coming soon" placeholders in the mode picker and ship in v2.
+2. Two-step picker: home selects an **instrument**, the instrument page selects a **mode** (single note / single chord / chord progression). See [`./wireframe.md`](./wireframe.md).
+3. Deployed as a static site at GitHub Pages.
+4. No backend, no accounts, all state in `localStorage`.
+5. Mobile-friendly, keyboard-accessible.
+6. Audio that sounds like real instruments — sine waves are insufficient for chord recognition.
 
 ## Non-goals (v1)
 
@@ -86,11 +88,12 @@ src/
 │   ├── BarDivider.tsx
 │   ├── StaffOrnament.tsx   # the faint 5-line background
 │   ├── FeedbackLine.tsx
-│   └── ModeCard.tsx
+│   └── ModeCard.tsx        # shared by Home (instruments) + InstrumentPage (modes)
 │
 ├── views/                  # one per route
-│   ├── Home.tsx
-│   ├── Exercise.tsx        # shared shell for the three modes
+│   ├── Home.tsx            # instrument picker — 2 cards
+│   ├── InstrumentPage.tsx  # mode picker for a chosen instrument — 3 cards
+│   ├── Exercise.tsx        # shared shell for the three implemented modes
 │   ├── Settings.tsx
 │   └── modes/
 │       ├── PianoNoteAnswers.tsx
@@ -106,7 +109,20 @@ src/
 
 Each mode has a `level` (1–5) that drives a set of fine-tune knobs through a preset table. Users can override individual knobs; doing so flips that mode's `level` to `'custom'`.
 
+A `Mode` is the cartesian product of an `Instrument` and an `Activity`. The 6 ids are derived via a template-literal type so adding instruments later (`bass`, `voice`) is a single-line change. v1 only implements 3 of the 6 ids; the rest exist as type-level cells but have no settings/stats/exercise wiring yet.
+
 ```ts
+type Instrument = 'piano' | 'guitar';
+type Activity   = 'note' | 'chord' | 'prog';
+type Mode       = `${Instrument}-${Activity}`;
+//                  'piano-note'   'piano-chord'   'piano-prog'
+//                  'guitar-note'  'guitar-chord'  'guitar-prog'
+
+// v1 implemented set:
+const IMPLEMENTED_MODES: ReadonlySet<Mode> = new Set([
+  'piano-note', 'guitar-chord', 'guitar-prog',
+]);
+
 type Level = 1 | 2 | 3 | 4 | 5 | 'custom';
 
 type PianoNoteKnobs = {
@@ -173,7 +189,20 @@ type ExerciseModule<Q, A> = {
 
 ### Routing
 
-`HashRouter` with three exercise routes plus settings. The exercise shell receives a `mode` prop and looks up the matching `ExerciseModule`.
+Hash routes mirror the picker tree: `#/{instrument}` for the mode picker and `#/{instrument}/{activity}` for the exercise.
+
+| Route | View |
+|---|---|
+| `/` | `Home` (instrument picker) |
+| `#/piano`, `#/guitar` | `InstrumentPage` (mode picker) |
+| `#/piano/note` | `Exercise mode='piano-note'` |
+| `#/guitar/chord` | `Exercise mode='guitar-chord'` |
+| `#/guitar/prog` | `Exercise mode='guitar-prog'` |
+| `#/settings` | `Settings` |
+
+Unimplemented `{instrument}/{activity}` cells (the three v2 placeholders) route back to the instrument picker — the disabled cards prevent the user from navigating to them in the first place, but the redirect handles deep links and stale bookmarks.
+
+Legacy deep links from the pre-matrix shape (`#/piano-note`, `#/guitar-chord`, `#/guitar-prog`) redirect to the new `{instrument}/{activity}` form. The redirect is a one-line shim in `lib/route.ts` and can be removed once the wild-link half-life passes.
 
 ## Milestones
 
@@ -200,7 +229,8 @@ Each milestone is independently demoable. Don't start the next until the previou
 
 ### M2 — Piano single note end-to-end (1–2 days)
 
-- Build `views/Home.tsx` (with placeholder cards for the other two modes).
+- Build `views/Home.tsx` (instrument picker — 2 cards).
+- Build `views/InstrumentPage.tsx` (mode picker — 3 cards; disabled cards for unimplemented activity cells).
 - Build `views/Exercise.tsx` shell.
 - Build `exercises/pianoNote.ts` — generate, play (reference tonic → target, per knob policy), validate.
 - Build `exercises/levels.ts` with the piano-note level table populated.
@@ -220,7 +250,7 @@ Each milestone is independently demoable. Don't start the next until the previou
 - Reset-progress button.
 - Visual polish: motion timings per `design.md`, focus rings, mobile breakpoints.
 
-**Done when:** every level 1–5 produces noticeably different piano-note takes, fine-tune knobs work, custom state survives a refresh, and the home card shows the current level.
+**Done when:** every level 1–5 produces noticeably different piano-note takes, fine-tune knobs work, custom state survives a refresh, and the piano mode picker shows the current level on the `single note` card.
 
 ### M4 — Guitar chord (1 day)
 
@@ -239,7 +269,7 @@ Each milestone is independently demoable. Don't start the next until the previou
 - Subtitle on this mode: **"name the changes."**
 - Roman-numeral toggle in settings; per-slot feedback after submit.
 
-**Done when:** all three modes are usable end-to-end at all 5 levels, and the home picker shows real stats + current level for each.
+**Done when:** all three implemented modes are usable end-to-end at all 5 levels, and the per-instrument mode picker shows real stats + current level for each. The home page (instrument picker) and the three "(coming soon)" cells render but are not interactive.
 
 ### M6 — Polish (1 day, ongoing)
 
@@ -291,6 +321,8 @@ Each milestone is independently demoable. Don't start the next until the previou
 - Light mode.
 - Adaptive difficulty (gradually expand chord pool as accuracy stays high).
 - More exercises: intervals, scale identification, melodic dictation.
-- Multiple instruments per mode (piano chords, guitar single notes).
+- The three deferred matrix cells: `piano · single chord`, `piano · chord progression`, `guitar · single note`. They appear as disabled "(coming soon)" cards in the mode picker; v2 fills them in. Each is one row in `levels.ts` plus one answer component — the v1 architecture already accommodates them.
+- Additional instruments (bass, voice, etc.) — the `Mode = '${Instrument}-${Activity}'` type makes adding a third row to the matrix a small change.
+- Per-instrument settings reorganization (currently one section per implemented mode; v2 may regroup by instrument as the matrix fills out).
 - Custom progressions / user-curated chord pools.
 - Per-question timing / decision-time stats.

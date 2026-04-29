@@ -1,13 +1,15 @@
 import { AnswerChip } from '../../components/AnswerChip';
+import { ALL_ROOTS, ALL_SUFFIXES } from '../../exercises/chords';
 import type { ChordName } from '../../exercises/chords';
 
-const DISPLAY_ORDER: ChordName[] = [
-  'C', 'D', 'E', 'F', 'G', 'A',
-  'Am', 'Dm', 'Em',
-  'Bdim',
-  'A7', 'D7', 'E7', 'G7',
-  'Am7', 'Dm7', 'Em7', 'Cmaj7',
-];
+// Suffix-major ordering: triads grouped together first, then 6ths, 7ths,
+// 9ths, etc. Within each suffix, roots in the canonical chromatic order
+// from chordLibrary. Pool filtering narrows the rendered set to the user's
+// actual selection, so chip count is bounded by the active pool, not by
+// this 731-name superset.
+const DISPLAY_ORDER: ChordName[] = ALL_SUFFIXES.flatMap((s) =>
+  ALL_ROOTS.map((r) => `${r}${s}` as ChordName),
+);
 
 type Props = {
   pool: ChordName[];

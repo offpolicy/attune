@@ -1,17 +1,28 @@
 import { getAudioContext, loadInstrument } from '../audio/instrument';
+import {
+  parseChordName,
+  synthesizeVoicing,
+  type ChordName,
+} from './chordLibrary';
 
-export type ChordName =
-  | 'A' | 'Am' | 'A7' | 'Am7'
-  | 'Bdim'
-  | 'C' | 'Cmaj7'
-  | 'D' | 'Dm' | 'D7' | 'Dm7'
-  | 'E' | 'Em' | 'E7' | 'Em7'
-  | 'F'
-  | 'G' | 'G7';
+export type {
+  ChordName,
+  ChordSuffix,
+  Root,
+} from './chordLibrary';
+export {
+  ALL_CHORD_NAMES,
+  ALL_ROOTS,
+  ALL_SUFFIXES,
+  QUALITY_INTERVALS,
+  parseChordName,
+  synthesizeVoicing,
+} from './chordLibrary';
 
-// Open-position voicings, low-to-high. Chosen to sound good on a
-// general-MIDI acoustic-steel sample without realistic fingering.
-export const CHORD_VOICINGS: Record<ChordName, string[]> = {
+// Hand-tuned open-position voicings. Anything not listed here is
+// synthesized at lookup time. These were verified by ear at M1 and
+// remain the preferred voicing whenever the chord appears.
+export const CURATED_VOICINGS: Partial<Record<ChordName, string[]>> = {
   A:     ['A2', 'E3',  'A3', 'C#4', 'E4'],
   Am:    ['A2', 'E3',  'A3', 'C4',  'E4'],
   A7:    ['A2', 'E3',  'A3', 'C#4', 'G4'],
@@ -31,6 +42,13 @@ export const CHORD_VOICINGS: Record<ChordName, string[]> = {
   G:     ['G2', 'B2',  'D3', 'G3',  'B3', 'G4'],
   G7:    ['G2', 'B2',  'D3', 'G3',  'B3', 'F4'],
 };
+
+export function voicingFor(chord: ChordName): string[] {
+  const curated = CURATED_VOICINGS[chord];
+  if (curated) return curated;
+  const { root, suffix } = parseChordName(chord);
+  return synthesizeVoicing(root, suffix);
+}
 
 export type StrumOpts = {
   staggerMs?: number;

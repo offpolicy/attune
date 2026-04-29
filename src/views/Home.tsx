@@ -1,38 +1,15 @@
-import { useStats } from '../state/stats';
-import { useSettings } from '../state/settings';
 import { ModeCard } from '../components/ModeCard';
-import { navigateToMode, navigateToSettings } from '../lib/route';
-import { levelLabel } from '../exercises/levels';
-import type { Mode } from '../types';
-import type { ModeStats } from '../state/stats';
-import type { Settings } from '../state/settings';
+import { navigateToInstrument, navigateToSettings } from '../lib/route';
+import type { Instrument } from '../types';
 
-const ORDINALS = ['i.', 'ii.', 'iii.'];
+const ORDINALS = ['i.', 'ii.'];
 
-function settingsKeyFor(mode: Mode): keyof Settings {
-  switch (mode) {
-    case 'piano-note':   return 'pianoNote';
-    case 'guitar-chord': return 'guitarChord';
-    case 'guitar-prog':  return 'guitarProg';
-  }
-}
-
-function formatStats(s: ModeStats): string {
-  const best = s.bestPct > 0 ? `best ${Math.round(s.bestPct)}%` : 'best —';
-  const streak = s.streakDays > 0 ? `streak ${s.streakDays}` : null;
-  return [best, streak].filter(Boolean).join(' · ');
-}
-
-const CARDS: { mode: Mode; title: string; subtitle: string }[] = [
-  { mode: 'piano-note',   title: 'piano',  subtitle: 'name the note'    },
-  { mode: 'guitar-chord', title: 'guitar', subtitle: 'name the chord'   },
-  { mode: 'guitar-prog',  title: 'guitar', subtitle: 'name the changes' },
+const INSTRUMENTS: { instrument: Instrument; title: string; subtitle: string }[] = [
+  { instrument: 'piano',  title: 'piano',  subtitle: 'keyboard exercises'  },
+  { instrument: 'guitar', title: 'guitar', subtitle: 'fretboard exercises' },
 ];
 
 export function Home() {
-  const { stats } = useStats();
-  const { settings } = useSettings();
-
   return (
     <main className="mx-auto max-w-2xl px-6 pt-16 pb-24 sm:pt-24 relative">
       <button
@@ -54,24 +31,21 @@ export function Home() {
         </p>
       </header>
 
+      <p className="mb-6 font-sans text-xs uppercase tracking-[0.18em] text-paper-faint">
+        pick your instrument
+      </p>
+
       <section className="space-y-3">
-        {CARDS.map((card, i) => {
-          const modeStats = stats[card.mode];
-          const level = settings[settingsKeyFor(card.mode)].level;
-          const statLine = `level ${
-            level === 'custom' ? '·' : level
-          } · ${levelLabel(level)} · ${formatStats(modeStats)}`;
-          return (
-            <ModeCard
-              key={card.mode}
-              ordinal={ORDINALS[i]!}
-              title={card.title}
-              subtitle={card.subtitle}
-              statLine={statLine}
-              onClick={() => navigateToMode(card.mode)}
-            />
-          );
-        })}
+        {INSTRUMENTS.map((card, i) => (
+          <ModeCard
+            key={card.instrument}
+            ordinal={ORDINALS[i]!}
+            title={card.title}
+            subtitle={card.subtitle}
+            statLine=""
+            onClick={() => navigateToInstrument(card.instrument)}
+          />
+        ))}
       </section>
     </main>
   );

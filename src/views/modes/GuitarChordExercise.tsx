@@ -79,7 +79,7 @@ export function GuitarChordExercise() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 pt-8 pb-24">
-      <ExerciseHeader title="guitar · chord" level={level} />
+      <ExerciseHeader title="guitar · single chord" level={level} instrument="guitar" />
 
       <section className="flex flex-col items-center gap-4 py-4">
         <Button onClick={play} disabled={busy || s.phase === 'answered'}>

@@ -34,7 +34,7 @@ export function GuitarProgressionExercise() {
 
   const [takeNumber, setTakeNumber] = useState(1);
   const [s, setS] = useState<State>(() => {
-    const q = generateGuitarProgQuestion(knobs);
+    const q = generateGuitarProgQuestion(knobs, level);
     return {
       phase: 'idle',
       question: q,
@@ -89,14 +89,14 @@ export function GuitarProgressionExercise() {
   }, [recordTakeFor]);
 
   const next = useCallback(() => {
-    const q = generateGuitarProgQuestion(knobs);
+    const q = generateGuitarProgQuestion(knobs, level);
     setTakeNumber((n) => n + 1);
     setS({
       phase: 'idle',
       question: q,
       slots: Array.from({ length: q.progression.length }, () => null),
     });
-  }, [knobs]);
+  }, [knobs, level]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -124,7 +124,7 @@ export function GuitarProgressionExercise() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 pt-8 pb-24">
-      <ExerciseHeader title="guitar · progression" level={level} />
+      <ExerciseHeader title="guitar · chord progression" level={level} instrument="guitar" />
 
       <section className="flex flex-col items-center gap-4 py-4">
         <p className="font-sans text-xs uppercase tracking-[0.18em] text-paper-muted">

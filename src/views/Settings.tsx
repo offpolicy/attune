@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '../components/Button';
+import { HelpTip } from '../components/HelpTip';
 import { navigateHome } from '../lib/route';
 import {
   useSettings,
@@ -15,14 +16,104 @@ import {
   GUITAR_CHORD_LEVEL_PRESETS,
   GUITAR_PROG_LEVEL_PRESETS,
 } from '../exercises/levels';
-import type { ChordName, Roman } from '../exercises/chords';
+import type { ChordName, ChordSuffix, Roman, Root } from '../exercises/chords';
+import type { QualityScheme } from '../exercises/progressionTemplates';
 
-const ALL_CHORDS: { group: string; chords: ChordName[] }[] = [
-  { group: 'open majors',       chords: ['C', 'D', 'E', 'F', 'G', 'A'] },
-  { group: 'open minors',       chords: ['Am', 'Dm', 'Em'] },
-  { group: 'diminished',        chords: ['Bdim'] },
-  { group: 'dominant 7ths',     chords: ['G7', 'D7', 'A7', 'E7'] },
-  { group: 'major / minor 7ths', chords: ['Cmaj7', 'Am7', 'Dm7', 'Em7'] },
+// The picker shows 12 canonical sharp roots. Flat enharmonic spellings exist
+// in the ChordName type and play identically; surfacing both in the picker
+// would create confusing duplicates, so flats are intentionally omitted here.
+const PICKER_ROOTS: Root[] = [
+  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
+];
+
+type QualityRowSpec = { suffix: ChordSuffix; label: string };
+type QualityGroup = { title: string; defaultOpen?: boolean; qualities: QualityRowSpec[] };
+
+const QUALITY_GROUPS: QualityGroup[] = [
+  {
+    title: 'triads & power',
+    defaultOpen: true,
+    qualities: [
+      { suffix: '',     label: 'maj' },
+      { suffix: 'm',    label: 'min' },
+      { suffix: 'dim',  label: 'dim' },
+      { suffix: 'aug',  label: 'aug' },
+      { suffix: 'sus2', label: 'sus2' },
+      { suffix: 'sus4', label: 'sus4' },
+      { suffix: '5',    label: '5 (power)' },
+    ],
+  },
+  {
+    title: 'sixths',
+    qualities: [
+      { suffix: '6',    label: '6' },
+      { suffix: 'm6',   label: 'm6' },
+      { suffix: '6/9',  label: '6/9' },
+      { suffix: 'm6/9', label: 'm6/9' },
+    ],
+  },
+  {
+    title: '7ths',
+    qualities: [
+      { suffix: '7',     label: '7 (dom)' },
+      { suffix: 'maj7',  label: 'maj7' },
+      { suffix: 'm7',    label: 'm7' },
+      { suffix: 'mMaj7', label: 'mMaj7' },
+      { suffix: 'dim7',  label: 'dim7' },
+      { suffix: 'm7b5',  label: 'm7b5' },
+    ],
+  },
+  {
+    title: '7ths altered & sus',
+    qualities: [
+      { suffix: '7sus4',  label: '7sus4' },
+      { suffix: '7sus2',  label: '7sus2' },
+      { suffix: '7b5',    label: '7b5' },
+      { suffix: '7#5',    label: '7#5' },
+      { suffix: 'maj7#5', label: 'maj7#5' },
+      { suffix: 'maj7b5', label: 'maj7b5' },
+    ],
+  },
+  {
+    title: 'adds (no 7)',
+    qualities: [
+      { suffix: 'add9',   label: 'add9' },
+      { suffix: 'madd9',  label: 'madd9' },
+      { suffix: 'add11',  label: 'add11' },
+      { suffix: 'madd11', label: 'madd11' },
+    ],
+  },
+  {
+    title: '9ths',
+    qualities: [
+      { suffix: '9',     label: '9' },
+      { suffix: 'maj9',  label: 'maj9' },
+      { suffix: 'm9',    label: 'm9' },
+      { suffix: 'mMaj9', label: 'mMaj9' },
+      { suffix: '9sus4', label: '9sus4' },
+      { suffix: '7b9',   label: '7b9' },
+      { suffix: '7#9',   label: '7#9' },
+    ],
+  },
+  {
+    title: '11ths',
+    qualities: [
+      { suffix: '11',      label: '11' },
+      { suffix: 'm11',     label: 'm11' },
+      { suffix: 'maj11',   label: 'maj11' },
+      { suffix: '7#11',    label: '7#11' },
+      { suffix: 'maj7#11', label: 'maj7#11' },
+    ],
+  },
+  {
+    title: '13ths',
+    qualities: [
+      { suffix: '13',     label: '13' },
+      { suffix: 'maj13',  label: 'maj13' },
+      { suffix: 'm13',    label: 'm13' },
+      { suffix: '13sus4', label: '13sus4' },
+    ],
+  },
 ];
 
 const ALL_ROMANS: Roman[] = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
@@ -80,7 +171,10 @@ function PianoSection() {
       <LevelSegments current={cur.level} onChange={setLevel} />
 
       <Disclosure summary="fine-tune">
-        <KnobRow label="pool">
+        <KnobRow
+          label="pool"
+          help="Which notes can appear as the question. Tonic triad: do/mi/sol only. Diatonic: all 7 scale tones. +Accidentals: includes the 5 black keys. Chromatic: all 12."
+        >
           <Select
             value={cur.knobs.pool}
             onChange={(v) => setKnob('pool', v as PianoNoteKnobs['pool'])}
@@ -92,7 +186,10 @@ function PianoSection() {
             ]}
           />
         </KnobRow>
-        <KnobRow label="range">
+        <KnobRow
+          label="range"
+          help="Vertical span the question can land in. Wider ranges train octave recognition on top of pitch."
+        >
           <Select
             value={rangeKey}
             onChange={(v) => {
@@ -106,7 +203,10 @@ function PianoSection() {
             ]}
           />
         </KnobRow>
-        <KnobRow label="labels">
+        <KnobRow
+          label="labels"
+          help="How the answer keys are labelled. Solfege uses fixed-do (do re mi fa sol la ti); numeric uses 1–7."
+        >
           <ToggleGroup
             value={cur.knobs.labels}
             onChange={(v) => setKnob('labels', v as 'solfege' | 'numeric')}
@@ -151,28 +251,52 @@ function GuitarChordSection() {
   };
 
   return (
-    <Section title="guitar · chord" subtitle="name the chord">
+    <Section title="guitar · single chord" subtitle="name the chord">
       <LevelSegments current={cur.level} onChange={setLevel} />
 
       <Disclosure summary="fine-tune">
-        <div className="space-y-4">
-          <KnobLabel>pool</KnobLabel>
-          {ALL_CHORDS.map(({ group, chords }) => (
-            <div key={group}>
-              <p className="font-sans text-[10px] uppercase tracking-[0.22em] text-paper-faint mb-2">
-                {group}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {chords.map((chord) => (
-                  <CheckboxChip
-                    key={chord}
-                    label={chord}
-                    checked={cur.knobs.pool.includes(chord)}
-                    onChange={() => togglePool(chord)}
-                  />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <KnobLabel help="Which chords can appear as the question. Categories are collapsible; expand the ones you want to draw from. Picker shows sharp spellings — flat names sound identical and aren't shown to avoid duplicates.">
+              pool
+            </KnobLabel>
+            <span className="font-sans text-[10px] uppercase tracking-[0.22em] text-paper-faint tabular-nums">
+              {cur.knobs.pool.length} selected
+            </span>
+          </div>
+          {QUALITY_GROUPS.map((group) => (
+            <details
+              key={group.title}
+              className="group border-t border-ink-700/60 first:border-t-0"
+              open={group.defaultOpen}
+            >
+              <summary className="cursor-pointer list-none py-3 font-sans text-[11px] uppercase tracking-[0.22em] text-paper-muted hover:text-paper flex items-center gap-2 select-none">
+                <span className="transition-transform group-open:rotate-90 inline-block w-3 text-paper-faint">›</span>
+                {group.title}
+              </summary>
+              <div className="pl-5 pb-3 space-y-3">
+                {group.qualities.map((q) => (
+                  <div key={q.suffix}>
+                    <p className="font-sans text-[10px] uppercase tracking-[0.22em] text-paper-faint mb-2">
+                      {q.label}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {PICKER_ROOTS.map((r) => {
+                        const chord = `${r}${q.suffix}` as ChordName;
+                        return (
+                          <CheckboxChip
+                            key={chord}
+                            label={chord}
+                            checked={cur.knobs.pool.includes(chord)}
+                            onChange={() => togglePool(chord)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
+            </details>
           ))}
         </div>
       </Disclosure>
@@ -214,18 +338,24 @@ function GuitarProgSection() {
   };
 
   return (
-    <Section title="guitar · progression" subtitle="name the changes">
+    <Section title="guitar · chord progression" subtitle="name the changes">
       <LevelSegments current={cur.level} onChange={setLevel} />
 
       <Disclosure summary="fine-tune">
-        <KnobRow label="length">
+        <KnobRow
+          label="length"
+          help="How many chords play in each progression. Longer = more to track and identify in order."
+        >
           <ToggleGroup
             value={String(cur.knobs.length)}
             onChange={(v) => setKnob('length', Number(v) as 3 | 4)}
             options={[['3', '3 chords'], ['4', '4 chords']]}
           />
         </KnobRow>
-        <KnobRow label="tempo">
+        <KnobRow
+          label="tempo"
+          help="Playback speed. Slow gives time to label each chord; fast forces quicker recognition."
+        >
           <ToggleGroup
             value={cur.knobs.tempo}
             onChange={(v) => setKnob('tempo', v as 'slow' | 'medium' | 'fast')}
@@ -236,7 +366,37 @@ function GuitarProgSection() {
             ]}
           />
         </KnobRow>
-        <KnobRow label="pool">
+        <KnobRow
+          label="colour"
+          help={
+            <>
+              How each Roman numeral is voiced. The progression shape stays the
+              same — only the harmonic flavour changes.
+              <br /><br />
+              <strong className="text-paper">triads</strong>: plain major/minor only.{' '}
+              <strong className="text-paper">+V7</strong>: dominant gets a 7th.{' '}
+              <strong className="text-paper">diatonic 7ths</strong>: every chord becomes its diatonic 7th.{' '}
+              <strong className="text-paper">extensions</strong>: sprinkles 9ths and 13ths.{' '}
+              <strong className="text-paper">altered</strong>: dominant gains tensions like 7b9 / 7#9.
+            </>
+          }
+        >
+          <Select
+            value={cur.knobs.qualityScheme ?? 'triads'}
+            onChange={(v) => setKnob('qualityScheme', v as QualityScheme)}
+            options={[
+              ['triads',         'triads only'],
+              ['triads+V7',      'triads + V7'],
+              ['diatonic-7ths',  'diatonic 7ths'],
+              ['extensions',     'extensions (9 / 13)'],
+              ['altered',        'altered (b9 / #9)'],
+            ]}
+          />
+        </KnobRow>
+        <KnobRow
+          label="pool"
+          help="Which Roman numerals can appear. I (the tonic) is always required and anchors every progression. Adding numerals widens the harmonic vocabulary."
+        >
           <div className="flex flex-wrap gap-2">
             {ALL_ROMANS.map((r) => (
               <CheckboxChip
@@ -364,7 +524,7 @@ function Disclosure({
   children: ReactNode;
 }) {
   return (
-    <details className="group rounded-lg border border-ink-700 bg-ink-850/40 overflow-hidden">
+    <details className="group rounded-lg border border-ink-700 bg-ink-850/40">
       <summary className="cursor-pointer list-none px-4 py-3 font-sans text-sm font-medium text-paper-muted hover:text-paper flex items-center gap-2 select-none">
         <span className="transition-transform group-open:rotate-90 inline-block w-3">›</span>
         {summary}
@@ -376,23 +536,34 @@ function Disclosure({
 
 function KnobRow({
   label,
+  help,
   children,
 }: {
   label: string;
+  help?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-      <KnobLabel>{label}</KnobLabel>
+      <KnobLabel help={help}>{label}</KnobLabel>
       <div className="flex-1 sm:max-w-md">{children}</div>
     </div>
   );
 }
 
-function KnobLabel({ children }: { children: ReactNode }) {
+function KnobLabel({
+  children,
+  help,
+}: {
+  children: ReactNode;
+  help?: ReactNode;
+}) {
   return (
-    <span className="font-sans text-xs uppercase tracking-[0.22em] text-paper-faint min-w-20">
-      {children}
+    <span className="inline-flex items-center gap-2 min-w-20">
+      <span className="font-sans text-xs uppercase tracking-[0.22em] text-paper-faint">
+        {children}
+      </span>
+      {help && <HelpTip>{help}</HelpTip>}
     </span>
   );
 }
