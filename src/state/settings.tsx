@@ -32,38 +32,47 @@ export type GuitarProgKnobs = {
   showRoman: boolean;
 };
 
+// Note/chord/progression knob types are reused per instrument in v1; the same
+// shape serves both piano-note and guitar-note (etc.). Specialization can come
+// later if a per-instrument knob diverges.
 export type Settings = {
-  pianoNote: { level: Level; knobs: PianoNoteKnobs };
+  pianoNote:   { level: Level; knobs: PianoNoteKnobs };
+  pianoChord:  { level: Level; knobs: GuitarChordKnobs };
+  pianoProg:   { level: Level; knobs: GuitarProgKnobs };
+  guitarNote:  { level: Level; knobs: PianoNoteKnobs };
   guitarChord: { level: Level; knobs: GuitarChordKnobs };
-  guitarProg: { level: Level; knobs: GuitarProgKnobs };
+  guitarProg:  { level: Level; knobs: GuitarProgKnobs };
 };
 
 const STORAGE_KEY = 'attune:settings:v1';
 
+const DEFAULT_NOTE_KNOBS: PianoNoteKnobs = {
+  pool: 'tonic-triad',
+  range: [60, 72],
+  labels: 'solfege',
+};
+
+const DEFAULT_CHORD_KNOBS: GuitarChordKnobs = {
+  pool: ['C', 'Am', 'F', 'G'],
+  voicing: 'fixed',
+};
+
+const DEFAULT_PROG_KNOBS: GuitarProgKnobs = {
+  key: 'C',
+  length: 3,
+  pool: ['I', 'IV', 'V'],
+  tempo: 'slow',
+  qualityScheme: 'triads',
+  showRoman: false,
+};
+
 export const DEFAULT_SETTINGS: Settings = {
-  pianoNote: {
-    level: 1,
-    knobs: {
-      pool: 'tonic-triad',
-      range: [60, 72],
-      labels: 'solfege',
-    },
-  },
-  guitarChord: {
-    level: 1,
-    knobs: { pool: ['C', 'Am', 'F', 'G'], voicing: 'fixed' },
-  },
-  guitarProg: {
-    level: 1,
-    knobs: {
-      key: 'C',
-      length: 3,
-      pool: ['I', 'IV', 'V'],
-      tempo: 'slow',
-      qualityScheme: 'triads',
-      showRoman: false,
-    },
-  },
+  pianoNote:   { level: 1, knobs: { ...DEFAULT_NOTE_KNOBS } },
+  pianoChord:  { level: 1, knobs: structuredClone(DEFAULT_CHORD_KNOBS) },
+  pianoProg:   { level: 1, knobs: structuredClone(DEFAULT_PROG_KNOBS) },
+  guitarNote:  { level: 1, knobs: { ...DEFAULT_NOTE_KNOBS } },
+  guitarChord: { level: 1, knobs: structuredClone(DEFAULT_CHORD_KNOBS) },
+  guitarProg:  { level: 1, knobs: structuredClone(DEFAULT_PROG_KNOBS) },
 };
 
 type SettingsCtx = {
@@ -74,9 +83,19 @@ type SettingsCtx = {
 const SettingsContext = createContext<SettingsCtx | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings>(() =>
-    readJSON(STORAGE_KEY, DEFAULT_SETTINGS),
-  );
+  const [settings, setSettings] = useState<Settings>(() => {
+    const persisted = readJSON<Partial<Settings>>(STORAGE_KEY, {});
+    // Hydrate per-key so settings persisted before the matrix expansion still
+    // load (3 keys → 6 keys); missing keys fall back to defaults.
+    return {
+      pianoNote:   persisted.pianoNote   ?? DEFAULT_SETTINGS.pianoNote,
+      pianoChord:  persisted.pianoChord  ?? DEFAULT_SETTINGS.pianoChord,
+      pianoProg:   persisted.pianoProg   ?? DEFAULT_SETTINGS.pianoProg,
+      guitarNote:  persisted.guitarNote  ?? DEFAULT_SETTINGS.guitarNote,
+      guitarChord: persisted.guitarChord ?? DEFAULT_SETTINGS.guitarChord,
+      guitarProg:  persisted.guitarProg  ?? DEFAULT_SETTINGS.guitarProg,
+    };
+  });
 
   useEffect(() => {
     writeJSON(STORAGE_KEY, settings);

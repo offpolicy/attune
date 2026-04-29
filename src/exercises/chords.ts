@@ -1,4 +1,8 @@
-import { getAudioContext, loadInstrument } from '../audio/instrument';
+import {
+  getAudioContext,
+  loadInstrument,
+  type InstrumentName,
+} from '../audio/instrument';
 import {
   parseChordName,
   synthesizeVoicing,
@@ -57,21 +61,29 @@ export type StrumOpts = {
   startAt?: number;
 };
 
-// Schedule a strum. Returns the actual start time so callers can sequence
-// successive strums (used by progression mode).
-export async function playStrum(
+// Schedule a chord on the given instrument. Default stagger is 22ms for guitar
+// (audible strum) and 0 for piano (block chord). Returns the actual start time
+// so callers can sequence successive chords (used by the progression mode).
+export async function playChordOn(
+  instrument: InstrumentName,
   notes: string[],
   opts: StrumOpts = {},
 ): Promise<number> {
-  const { staggerMs = 22, duration = 1.6, velocity = 90, startAt } = opts;
-  const guitar = await loadInstrument('guitar');
+  const defaultStagger = instrument === 'guitar' ? 22 : 0;
+  const { staggerMs = defaultStagger, duration = 1.6, velocity = 90, startAt } = opts;
+  const player = await loadInstrument(instrument);
   const ctx = getAudioContext();
   const t0 = startAt ?? ctx.currentTime + 0.05;
   const stagger = staggerMs / 1000;
   notes.forEach((note, i) => {
-    guitar.start({ note, time: t0 + i * stagger, duration, velocity });
+    player.start({ note, time: t0 + i * stagger, duration, velocity });
   });
   return t0;
+}
+
+// Backwards-compatible alias used by the existing guitar-chord exercise.
+export function playStrum(notes: string[], opts: StrumOpts = {}): Promise<number> {
+  return playChordOn('guitar', notes, opts);
 }
 
 // Roman numeral support for the progression mode. v1 supports C major.

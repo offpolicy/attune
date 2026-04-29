@@ -5,15 +5,16 @@ import { Button } from '../../components/Button';
 import { FeedbackLine } from '../../components/FeedbackLine';
 import { loadInstrument } from '../../audio/instrument';
 import {
-  generateGuitarChordQuestion,
-  playGuitarChord,
-  isCorrectGuitarChord,
-  describeGuitarChord,
+  generateChordQuestion,
+  playChord,
+  isCorrectChord,
+  describeChord,
   type GuitarChordQuestion,
 } from '../../exercises/guitarChord';
 import type { ChordName } from '../../exercises/chords';
 import { GuitarChordAnswers } from './GuitarChordAnswers';
 import { ExerciseHeader, ExerciseFooter } from './ExerciseChrome';
+import { splitMode, type Mode } from '../../types';
 
 type Phase = 'idle' | 'played' | 'answered';
 
@@ -24,40 +25,62 @@ type State = {
   correct?: boolean;
 };
 
-export function GuitarChordExercise() {
+const SETTINGS_KEY = {
+  'piano-chord':  'pianoChord',
+  'guitar-chord': 'guitarChord',
+} as const;
+
+const TITLE: Record<'piano-chord' | 'guitar-chord', string> = {
+  'piano-chord':  'piano · single chord',
+  'guitar-chord': 'guitar · single chord',
+};
+
+type SingleChordMode = 'piano-chord' | 'guitar-chord';
+
+function isSingleChordMode(m: Mode): m is SingleChordMode {
+  return m === 'piano-chord' || m === 'guitar-chord';
+}
+
+export function GuitarChordExercise({
+  mode = 'guitar-chord' as Mode,
+}: { mode?: Mode } = {}) {
+  if (!isSingleChordMode(mode)) throw new Error(`GuitarChordExercise got non-chord mode: ${mode}`);
+  const { instrument } = splitMode(mode);
+  const settingsKey = SETTINGS_KEY[mode];
+
   const { settings } = useSettings();
   const { stats, recordTakeFor } = useStats();
-  const knobs = settings.guitarChord.knobs;
-  const level = settings.guitarChord.level;
+  const knobs = settings[settingsKey].knobs;
+  const level = settings[settingsKey].level;
 
   const [takeNumber, setTakeNumber] = useState(1);
   const [s, setS] = useState<State>(() => ({
     phase: 'idle',
-    question: generateGuitarChordQuestion(knobs),
+    question: generateChordQuestion(knobs),
   }));
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { void loadInstrument('guitar'); }, []);
+  useEffect(() => { void loadInstrument(instrument); }, [instrument]);
 
   const play = useCallback(async () => {
     setBusy(true);
-    try { await playGuitarChord(s.question); }
+    try { await playChord(instrument, s.question); }
     finally {
       setBusy(false);
       setS((cur) => (cur.phase === 'idle' ? { ...cur, phase: 'played' } : cur));
     }
-  }, [s.question]);
+  }, [s.question, instrument]);
 
   const submit = useCallback((chord: ChordName) => {
     if (s.phase !== 'played') return;
-    const correct = isCorrectGuitarChord(s.question, chord);
-    recordTakeFor('guitar-chord', correct);
+    const correct = isCorrectChord(s.question, chord);
+    recordTakeFor(mode, correct);
     setS((cur) => ({ ...cur, phase: 'answered', userAnswer: chord, correct }));
-  }, [s.phase, s.question, recordTakeFor]);
+  }, [s.phase, s.question, recordTakeFor, mode]);
 
   const next = useCallback(() => {
     setTakeNumber((n) => n + 1);
-    setS({ phase: 'idle', question: generateGuitarChordQuestion(knobs) });
+    setS({ phase: 'idle', question: generateChordQuestion(knobs) });
   }, [knobs]);
 
   useEffect(() => {
@@ -79,7 +102,7 @@ export function GuitarChordExercise() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 pt-8 pb-24">
-      <ExerciseHeader title="guitar · single chord" level={level} instrument="guitar" />
+      <ExerciseHeader title={TITLE[mode]} level={level} instrument={instrument} />
 
       <section className="flex flex-col items-center gap-4 py-4">
         <Button onClick={play} disabled={busy || s.phase === 'answered'}>
@@ -105,7 +128,7 @@ export function GuitarChordExercise() {
 
         <FeedbackLine
           state={s.phase === 'answered' ? (s.correct ? 'correct' : 'wrong') : 'idle'}
-          answer={s.phase === 'answered' ? describeGuitarChord(s.question) : undefined}
+          answer={s.phase === 'answered' ? describeChord(s.question) : undefined}
         />
 
         <div className="h-12 flex items-center">
@@ -117,7 +140,7 @@ export function GuitarChordExercise() {
         </div>
       </section>
 
-      <ExerciseFooter takeNumber={takeNumber} modeStats={stats['guitar-chord']} />
+      <ExerciseFooter takeNumber={takeNumber} modeStats={stats[mode]} />
     </main>
   );
 }

@@ -12,14 +12,14 @@ Hash-based, so no server config is needed.
 | `#/piano` | Piano — mode picker |
 | `#/guitar` | Guitar — mode picker |
 | `#/piano/note` | Piano · single note quiz |
-| `#/piano/chord` | Piano · single chord quiz *(v2)* |
-| `#/piano/prog` | Piano · chord progression quiz *(v2)* |
-| `#/guitar/note` | Guitar · single note quiz *(v2)* |
+| `#/piano/chord` | Piano · single chord quiz |
+| `#/piano/prog` | Piano · chord progression quiz |
+| `#/guitar/note` | Guitar · single note quiz |
 | `#/guitar/chord` | Guitar · single chord quiz |
 | `#/guitar/prog` | Guitar · chord progression quiz |
 | `#/settings` | Settings (drawer on desktop, full screen on mobile) |
 
-The `{instrument}/{activity}` URL shape mirrors the picker tree. Activity slugs (`note`, `chord`, `prog`) match the existing exercise IDs so legacy deep links like `#/piano-note` can be redirected to `#/piano/note` with a one-line shim. v2 will fill the three "(v2)" cells; v1 ships only the three implemented combinations.
+The `{instrument}/{activity}` URL shape mirrors the picker tree. Activity slugs (`note`, `chord`, `prog`) match the exercise IDs so legacy deep links like `#/piano-note` redirect to `#/piano/note` with a one-line shim. All 6 matrix cells ship.
 
 ## Shared shell
 
@@ -96,7 +96,8 @@ Picks a mode for the selected instrument. Three cards: **single note · single c
 │  ┌────────────────────────────┐  │
 │  │ i.  single note            │  │
 │  │     name the note          │  │
-│  │     coming soon            │  │
+│  │     level 2 · session      │  │
+│  │     best 92% · streak 4    │  │
 │  └────────────────────────────┘  │
 │                                  │
 │  ┌────────────────────────────┐  │
@@ -117,18 +118,18 @@ Picks a mode for the selected instrument. Three cards: **single note · single c
 ```
 
 - Activity labels read in plain English: **single note · single chord · chord progression**. The italic subtitle is the existing per-mode prompt (`name the note`, `name the chord`, `name the changes`).
-- Implemented cells show level, level name, and best accuracy / streak from localStorage.
-- Unimplemented cells (the three "v2" cells in the matrix) render as **disabled cards** with `coming soon` in place of the stat line. They are visible for completeness but not tappable; the cursor and hover state make this obvious.
-- Tapping an enabled card routes to that exercise (`#/{instrument}/{activity}`) and starts the first take immediately — no second "start" tap.
+- Each card shows level, level name, and best accuracy / streak from localStorage.
+- Tapping a card routes to that exercise (`#/{instrument}/{activity}`) and starts the first take immediately — no second "start" tap.
+- The `ModeCard` primitive still supports a disabled "(coming soon)" variant — used when adding new instruments or activities mid-development.
 
 ### The matrix at v1
 
 |              | single note | single chord | chord progression |
 |---           |---          |---           |---                |
-| **piano**    | ✓ ships     | (v2)         | (v2)              |
-| **guitar**   | (v2)        | ✓ ships      | ✓ ships           |
+| **piano**    | ✓           | ✓            | ✓                 |
+| **guitar**   | ✓           | ✓            | ✓                 |
 
-The matrix is the conceptual scaffold; v1 fills three cells, v2 fills the rest. Adding instruments (e.g. bass) extends the matrix vertically without touching the picker tree.
+All six matrix cells ship in v1. Single chord and progression modes share the same chord library and generators between piano and guitar — only audio rendering differs (block chord on piano vs strummed on guitar, root-octave synthesized voicing on piano vs curated open-position voicing on guitar). Adding instruments (e.g. bass) extends the matrix vertically without touching the picker tree.
 
 ## 3. Exercise screens — common pattern
 
@@ -235,21 +236,22 @@ The progression mode subtitle is **"name the changes."**
 - After submit: each slot shows ✓ or ✗ in place; feedback line shows the correct progression. Optional roman-numeral view toggle.
 - Generation logic (template-based v1): see [`./progression-algorithm.md`](./progression-algorithm.md).
 
-## 7. Future cells (v2)
+## 7. Cross-instrument modes
 
-Three matrix cells are deferred. They appear as disabled cards on the mode picker so the matrix structure is visible from day one.
+The single-chord and progression modes are now multi-instrument; the same generator and answer UI serve both piano and guitar variants. Audio rendering branches on `instrument`:
 
-- **`piano · single chord`** — same loop as `guitar · single chord` but with piano voicings (root-position triads + extensions). Reuses the chord library and answer chip grid; only the audio rendering differs.
-- **`piano · chord progression`** — block-chord piano voicings of the progression. Reuses the progression generator and answer slots; the difference is the keyboard's harmonic clarity (no strum stagger, full triad density).
-- **`guitar · single note`** — pluck a single note on guitar. Reuses the single-note answer keyboard or a fretboard view; an open question whether to constrain to standard-tuning natural-note positions or accept any note.
+- **single chord** — guitar plays a strum (22ms inter-string stagger); piano plays a block chord (no stagger).
+- **chord progression** — same idea per slot. Piano gets a block-chord per progression step; guitar strums.
+- **voicing source** — guitar uses curated open-position voicings (anchored low on the fretboard) when available, falling back to the synthesized voicing. Piano always uses the synthesized voicing (mid-octave, no curated overrides for now).
+- **single note** — same pool/range/labels for piano and guitar; the only difference is which soundfont plays the target / tonic.
 
-These three cells are pure v2 work; the v1 architecture supports them without restructuring (the exercise contract is per-`Mode`, and each new mode adds one row to `levels.ts` plus one answer component).
+Specialization (e.g. piano-friendly chord curated voicings, a fretboard-style answer area for guitar single note) is a follow-up; the shared-infrastructure baseline ships first so the matrix can be ear-tested end-to-end.
 
 ## 8. Settings
 
 Drawer from the right on desktop, full screen on mobile. Most users only touch **level**; advanced knobs are tucked behind a disclosure.
 
-For v1, settings is organized **per mode**, mirroring the implemented cells of the matrix. v2 will regroup by instrument once the matrix fills out.
+Settings is organized **per mode** — one section per matrix cell, six sections total in v1. Mode-pairs that share a knob shape (e.g. `piano-note` + `guitar-note` both use `PianoNoteKnobs`) are rendered by the same parametrized section component; only the `settingsKey` differs. Future restructure to group by instrument is a v2 follow-up if the section list gets unwieldy.
 
 ```
 ┌──────────────────────────────────┐
@@ -264,23 +266,30 @@ For v1, settings is organized **per mode**, mirroring the implemented cells of t
 │      range         [ C4 – C5  ▾ ]          │
 │      labels        ( solfege | 1-7 )       │
 │                                  │
-│  guitar · single chord           │
-│   level   ○─●─○─○─○              │
-│           session                │
-│   ▾ fine-tune                    │
-│      pool          [ ☑ A ] [ ☑ Am ] …       │
-│      voicing       ( fixed | varied )       │
-│                                  │
-│  guitar · chord progression      │
+│  piano · single chord            │
 │   level   ●─○─○─○─○              │
 │           warmup                 │
 │   ▾ fine-tune                    │
-│      key           [ E major  ▾ ]           │
+│      pool          [ ☑ C ] [ ☑ Am ] …      │
+│      voicing       ( fixed | varied )       │
+│                                  │
+│  piano · chord progression       │
+│   level   ●─○─○─○─○              │
+│           warmup                 │
+│   ▾ fine-tune                    │
 │      length        ( 3 | 4 )                │
-│      pool          [ ☑ I ] [ ☑ IV ] [ ☑ V ] │
-│      colour        [ triads ▾ ]             │
 │      tempo         ( slow | medium | fast ) │
-│      show roman    ( on | off )             │
+│      colour        [ triads ▾ ]             │
+│      pool          [ ☑ I ] [ ☑ IV ] [ ☑ V ] │
+│                                  │
+│  guitar · single note            │
+│   …same shape as piano · note   │
+│                                  │
+│  guitar · single chord           │
+│   …same shape as piano · chord  │
+│                                  │
+│  guitar · chord progression      │
+│   …same shape as piano · prog   │
 │                                  │
 │  data                            │
 │   [ reset progress ]             │
@@ -316,7 +325,7 @@ The other implemented modes have analogous tables — single chord by chord-name
                   piano       guitar
                  ╱  │  ╲      ╱  │  ╲
                note ch prog note ch prog
-              (✓) (v2)(v2) (v2)(✓)(✓)
+               (✓) (✓)(✓)  (✓) (✓)(✓)
 
    any screen → settings → back to where you were
    exercise   →    [←]   → mode picker for that instrument
@@ -337,5 +346,5 @@ A two-step picker keeps each screen single-purpose: home decides "which world am
 - Accounts, sync, leaderboards.
 - Custom exercise builder.
 - Melodic dictation, interval mode, scale identification.
-- The three deferred matrix cells: `piano · single chord`, `piano · chord progression`, `guitar · single note`. They are reachable in the picker as disabled "(coming soon)" cards but ship behaviour is v2.
-- Per-instrument settings reorganization. The current per-mode settings sections are fine for the three v1 cells; reorganization waits until the matrix fills out.
+- Specialization of the cross-instrument modes — piano-friendly curated chord voicings, a fretboard-style answer area for guitar single note, distinct level tables tuned per instrument. The shared-infrastructure baseline ships first; specialization is a v2 follow-up driven by ear-testing.
+- Per-instrument settings reorganization. Six per-mode settings sections is fine for v1; regrouping by instrument waits until the section list grows or feedback says it should.

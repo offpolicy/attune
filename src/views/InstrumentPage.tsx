@@ -30,12 +30,14 @@ const INSTRUMENT_TITLE: Record<Instrument, string> = {
   guitar: 'guitar',
 };
 
-function settingsKeyFor(mode: Mode): keyof Settings | null {
+function settingsKeyFor(mode: Mode): keyof Settings {
   switch (mode) {
     case 'piano-note':   return 'pianoNote';
+    case 'piano-chord':  return 'pianoChord';
+    case 'piano-prog':   return 'pianoProg';
+    case 'guitar-note':  return 'guitarNote';
     case 'guitar-chord': return 'guitarChord';
     case 'guitar-prog':  return 'guitarProg';
-    default:             return null;
   }
 }
 
@@ -79,9 +81,9 @@ export function InstrumentPage({ instrument }: { instrument: Instrument }) {
           const implemented = IMPLEMENTED_MODES.has(mode);
           const settingsKey = settingsKeyFor(mode);
           const modeStats = stats[mode];
-          const level = settingsKey ? settings[settingsKey].level : null;
+          const level = settings[settingsKey].level;
 
-          const statLine = implemented && settingsKey && level !== null
+          const statLine = implemented
             ? `level ${level === 'custom' ? '·' : level} · ${levelLabel(level)} · ${formatStats(modeStats)}`
             : 'coming soon';
 

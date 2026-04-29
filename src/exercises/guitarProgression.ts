@@ -1,4 +1,13 @@
-import { unlockAudio, loadInstrument, getAudioContext } from '../audio/instrument';
+import {
+  unlockAudio,
+  loadInstrument,
+  getAudioContext,
+  type InstrumentName,
+} from '../audio/instrument';
+import {
+  parseChordName,
+  synthesizeVoicing,
+} from './chordLibrary';
 import {
   voicingFor,
   type ChordName,
@@ -96,32 +105,45 @@ function legacyRandomGenerate(
   };
 }
 
-export async function playGuitarProgQuestion(
+function voicingForInstrument(
+  instrument: InstrumentName,
+  chord: ChordName,
+): string[] {
+  if (instrument === 'guitar') return voicingFor(chord);
+  const { root, suffix } = parseChordName(chord);
+  return synthesizeVoicing(root, suffix);
+}
+
+export async function playProgressionQuestion(
+  instrument: InstrumentName,
   q: GuitarProgQuestion,
   tempo: 'slow' | 'medium' | 'fast',
 ): Promise<void> {
   await unlockAudio();
-  await loadInstrument('guitar');
+  const player = await loadInstrument(instrument);
   const stride = STRIDE_BY_TEMPO[tempo];
+  const stagger = instrument === 'guitar' ? 0.022 : 0;
   const ctx = getAudioContext();
   let t = ctx.currentTime + 0.05;
   for (const chord of q.progression) {
-    await playStrumScheduled(chord, t, stride * 1.3);
+    const notes = voicingForInstrument(instrument, chord);
+    notes.forEach((note, i) => {
+      player.start({
+        note,
+        time: t + i * stagger,
+        duration: stride * 1.3,
+        velocity: 90,
+      });
+    });
     t += stride;
   }
 }
 
-async function playStrumScheduled(
-  chord: ChordName,
-  startAt: number,
-  duration: number,
-): Promise<void> {
-  const notes = voicingFor(chord);
-  const guitar = await loadInstrument('guitar');
-  notes.forEach((note, i) => {
-    guitar.start({ note, time: startAt + i * 0.022, duration, velocity: 90 });
-  });
-}
+// Backwards-compat alias for the existing guitar-prog exercise view.
+export const playGuitarProgQuestion = (
+  q: GuitarProgQuestion,
+  tempo: 'slow' | 'medium' | 'fast',
+) => playProgressionQuestion('guitar', q, tempo);
 
 export function perSlotFeedback(
   q: GuitarProgQuestion,

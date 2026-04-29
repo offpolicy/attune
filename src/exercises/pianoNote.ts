@@ -1,4 +1,9 @@
-import { getAudioContext, loadInstrument, unlockAudio } from '../audio/instrument';
+import {
+  getAudioContext,
+  loadInstrument,
+  unlockAudio,
+  type InstrumentName,
+} from '../audio/instrument';
 import { midiToNote, type Midi } from '../audio/theory';
 import type { PianoNoteKnobs } from '../state/settings';
 
@@ -122,26 +127,37 @@ export function generatePianoNoteQuestion(
   return { tonicMidi, targetMidi, degreeLabel: degree.label };
 }
 
-export async function playPianoTarget(q: PianoNoteQuestion): Promise<void> {
+// Guitar samples have a slower decay than piano hammers; give them more
+// duration so the note doesn't get cut off mid-pluck.
+const TARGET_DURATION: Record<InstrumentName, number> = { piano: 1.4, guitar: 1.8 };
+const TONIC_DURATION:  Record<InstrumentName, number> = { piano: 1.0, guitar: 1.4 };
+
+export async function playNoteTarget(
+  instrument: InstrumentName,
+  q: PianoNoteQuestion,
+): Promise<void> {
   await unlockAudio();
-  const piano = await loadInstrument('piano');
+  const player = await loadInstrument(instrument);
   const ctx = getAudioContext();
-  piano.start({
+  player.start({
     note: midiToNote(q.targetMidi),
     time: ctx.currentTime + 0.05,
-    duration: 1.4,
+    duration: TARGET_DURATION[instrument],
     velocity: 90,
   });
 }
 
-export async function playPianoTonic(q: PianoNoteQuestion): Promise<void> {
+export async function playNoteTonic(
+  instrument: InstrumentName,
+  q: PianoNoteQuestion,
+): Promise<void> {
   await unlockAudio();
-  const piano = await loadInstrument('piano');
+  const player = await loadInstrument(instrument);
   const ctx = getAudioContext();
-  piano.start({
+  player.start({
     note: midiToNote(q.tonicMidi),
     time: ctx.currentTime + 0.05,
-    duration: 1.0,
+    duration: TONIC_DURATION[instrument],
     velocity: 80,
   });
 }

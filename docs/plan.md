@@ -9,7 +9,7 @@ References:
 
 ## Goals
 
-1. Three working exercise modes within an **instrument × activity** matrix: piano single note, guitar chord, guitar progression. The matrix is 2 × 3 in v1 with three cells filled; the other three (`piano · chord`, `piano · progression`, `guitar · note`) are visible as "coming soon" placeholders in the mode picker and ship in v2.
+1. All six exercise modes in the 2 × 3 **instrument × activity** matrix ship in v1: piano + guitar × (single note, single chord, chord progression). Mode pairs that share knob shapes (e.g. `piano-note` + `guitar-note`) reuse the same generator and answer UI; only audio rendering differs per instrument.
 2. Two-step picker: home selects an **instrument**, the instrument page selects a **mode** (single note / single chord / chord progression). See [`./wireframe.md`](./wireframe.md).
 3. Deployed as a static site at GitHub Pages.
 4. No backend, no accounts, all state in `localStorage`.
@@ -200,7 +200,7 @@ Hash routes mirror the picker tree: `#/{instrument}` for the mode picker and `#/
 | `#/guitar/prog` | `Exercise mode='guitar-prog'` |
 | `#/settings` | `Settings` |
 
-Unimplemented `{instrument}/{activity}` cells (the three v2 placeholders) route back to the instrument picker — the disabled cards prevent the user from navigating to them in the first place, but the redirect handles deep links and stale bookmarks.
+All six `{instrument}/{activity}` cells route to a working exercise. The picker still supports a disabled "(coming soon)" card variant for forward compatibility (new instruments or activities mid-development), and the route parser falls back to the instrument picker for any cell not in `IMPLEMENTED_MODES`.
 
 Legacy deep links from the pre-matrix shape (`#/piano-note`, `#/guitar-chord`, `#/guitar-prog`) redirect to the new `{instrument}/{activity}` form. The redirect is a one-line shim in `lib/route.ts` and can be removed once the wild-link half-life passes.
 
@@ -269,7 +269,7 @@ Each milestone is independently demoable. Don't start the next until the previou
 - Subtitle on this mode: **"name the changes."**
 - Roman-numeral toggle in settings; per-slot feedback after submit.
 
-**Done when:** all three implemented modes are usable end-to-end at all 5 levels, and the per-instrument mode picker shows real stats + current level for each. The home page (instrument picker) and the three "(coming soon)" cells render but are not interactive.
+**Done when:** all six matrix cells are usable end-to-end at all 5 levels, and each per-instrument mode picker shows real stats + current level for each card.
 
 ### M6 — Polish (1 day, ongoing)
 
@@ -321,8 +321,8 @@ Each milestone is independently demoable. Don't start the next until the previou
 - Light mode.
 - Adaptive difficulty (gradually expand chord pool as accuracy stays high).
 - More exercises: intervals, scale identification, melodic dictation.
-- The three deferred matrix cells: `piano · single chord`, `piano · chord progression`, `guitar · single note`. They appear as disabled "(coming soon)" cards in the mode picker; v2 fills them in. Each is one row in `levels.ts` plus one answer component — the v1 architecture already accommodates them.
+- Specialization of the cross-instrument modes — piano-friendly curated chord voicings, a fretboard-style answer area for guitar single note, distinct level tables tuned per instrument. Shared infrastructure ships first; specialization is driven by ear-testing feedback.
 - Additional instruments (bass, voice, etc.) — the `Mode = '${Instrument}-${Activity}'` type makes adding a third row to the matrix a small change.
-- Per-instrument settings reorganization (currently one section per implemented mode; v2 may regroup by instrument as the matrix fills out).
+- Per-instrument settings reorganization (currently one section per mode = six sections; regrouping by instrument waits until the section list grows or feedback says it should).
 - Custom progressions / user-curated chord pools.
 - Per-question timing / decision-time stats.

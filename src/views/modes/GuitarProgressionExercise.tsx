@@ -6,7 +6,7 @@ import { FeedbackLine } from '../../components/FeedbackLine';
 import { loadInstrument } from '../../audio/instrument';
 import {
   generateGuitarProgQuestion,
-  playGuitarProgQuestion,
+  playProgressionQuestion,
   isCorrectProgression,
   describeProgression,
   perSlotFeedback,
@@ -15,6 +15,7 @@ import {
 import type { ChordName } from '../../exercises/chords';
 import { GuitarProgressionAnswers } from './GuitarProgressionAnswers';
 import { ExerciseHeader, ExerciseFooter } from './ExerciseChrome';
+import { splitMode, type Mode } from '../../types';
 
 type Phase = 'idle' | 'played' | 'filling' | 'answered';
 
@@ -26,11 +27,33 @@ type State = {
   feedback?: boolean[];
 };
 
-export function GuitarProgressionExercise() {
+const SETTINGS_KEY = {
+  'piano-prog':  'pianoProg',
+  'guitar-prog': 'guitarProg',
+} as const;
+
+const TITLE: Record<'piano-prog' | 'guitar-prog', string> = {
+  'piano-prog':  'piano · chord progression',
+  'guitar-prog': 'guitar · chord progression',
+};
+
+type ProgMode = 'piano-prog' | 'guitar-prog';
+
+function isProgMode(m: Mode): m is ProgMode {
+  return m === 'piano-prog' || m === 'guitar-prog';
+}
+
+export function GuitarProgressionExercise({
+  mode = 'guitar-prog' as Mode,
+}: { mode?: Mode } = {}) {
+  if (!isProgMode(mode)) throw new Error(`GuitarProgressionExercise got non-prog mode: ${mode}`);
+  const { instrument } = splitMode(mode);
+  const settingsKey = SETTINGS_KEY[mode];
+
   const { settings } = useSettings();
   const { stats, recordTakeFor } = useStats();
-  const knobs = settings.guitarProg.knobs;
-  const level = settings.guitarProg.level;
+  const knobs = settings[settingsKey].knobs;
+  const level = settings[settingsKey].level;
 
   const [takeNumber, setTakeNumber] = useState(1);
   const [s, setS] = useState<State>(() => {
@@ -43,18 +66,18 @@ export function GuitarProgressionExercise() {
   });
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { void loadInstrument('guitar'); }, []);
+  useEffect(() => { void loadInstrument(instrument); }, [instrument]);
 
   const play = useCallback(async () => {
     setBusy(true);
-    try { await playGuitarProgQuestion(s.question, knobs.tempo); }
+    try { await playProgressionQuestion(instrument, s.question, knobs.tempo); }
     finally {
       setBusy(false);
       setS((cur) =>
         cur.phase === 'idle' ? { ...cur, phase: 'played' } : cur,
       );
     }
-  }, [s.question, knobs.tempo]);
+  }, [s.question, knobs.tempo, instrument]);
 
   const pickChord = useCallback((chord: ChordName) => {
     setS((cur) => {
@@ -63,8 +86,7 @@ export function GuitarProgressionExercise() {
       if (idx === -1) return cur;
       const slots = [...cur.slots];
       slots[idx] = chord;
-      const allFilled = slots.every((v) => v != null);
-      return { ...cur, slots, phase: allFilled ? 'filling' : 'filling' };
+      return { ...cur, slots, phase: 'filling' };
     });
   }, []);
 
@@ -83,10 +105,10 @@ export function GuitarProgressionExercise() {
       const answer = cur.slots as ChordName[];
       const correct = isCorrectProgression(cur.question, answer);
       const fb = perSlotFeedback(cur.question, answer);
-      recordTakeFor('guitar-prog', correct);
+      recordTakeFor(mode, correct);
       return { ...cur, phase: 'answered', correct, feedback: fb };
     });
-  }, [recordTakeFor]);
+  }, [recordTakeFor, mode]);
 
   const next = useCallback(() => {
     const q = generateGuitarProgQuestion(knobs, level);
@@ -124,7 +146,7 @@ export function GuitarProgressionExercise() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 pt-8 pb-24">
-      <ExerciseHeader title="guitar · chord progression" level={level} instrument="guitar" />
+      <ExerciseHeader title={TITLE[mode]} level={level} instrument={instrument} />
 
       <section className="flex flex-col items-center gap-4 py-4">
         <p className="font-sans text-xs uppercase tracking-[0.18em] text-paper-muted">
@@ -177,7 +199,7 @@ export function GuitarProgressionExercise() {
         </div>
       </section>
 
-      <ExerciseFooter takeNumber={takeNumber} modeStats={stats['guitar-prog']} />
+      <ExerciseFooter takeNumber={takeNumber} modeStats={stats[mode]} />
     </main>
   );
 }

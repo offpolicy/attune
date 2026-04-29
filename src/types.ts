@@ -5,10 +5,12 @@ export type Mode = `${Instrument}-${Activity}`;
 export const ALL_INSTRUMENTS: readonly Instrument[] = ['piano', 'guitar'];
 export const ALL_ACTIVITIES: readonly Activity[] = ['note', 'chord', 'prog'];
 
-// v1 ships these three; the other three (piano-chord, piano-prog, guitar-note)
-// are placeholders in the picker matrix.
+// All six matrix cells now ship in v1.
 export const IMPLEMENTED_MODES = new Set<Mode>([
   'piano-note',
+  'piano-chord',
+  'piano-prog',
+  'guitar-note',
   'guitar-chord',
   'guitar-prog',
 ]);

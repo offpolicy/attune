@@ -134,40 +134,68 @@ export function SettingsView() {
       </header>
 
       <div className="space-y-12">
-        <PianoSection />
-        <GuitarChordSection />
-        <GuitarProgSection />
+        <SingleNoteSection
+          settingsKey="pianoNote"
+          title="piano · single note"
+        />
+        <SingleChordSection
+          settingsKey="pianoChord"
+          title="piano · single chord"
+        />
+        <ProgSection
+          settingsKey="pianoProg"
+          title="piano · chord progression"
+        />
+        <SingleNoteSection
+          settingsKey="guitarNote"
+          title="guitar · single note"
+        />
+        <SingleChordSection
+          settingsKey="guitarChord"
+          title="guitar · single chord"
+        />
+        <ProgSection
+          settingsKey="guitarProg"
+          title="guitar · chord progression"
+        />
         <DataSection />
       </div>
     </main>
   );
 }
 
-// ────────── piano ──────────
+type NoteKey  = 'pianoNote'  | 'guitarNote';
+type ChordKey = 'pianoChord' | 'guitarChord';
+type ProgKey  = 'pianoProg'  | 'guitarProg';
 
-function PianoSection() {
+// ────────── single note (piano + guitar) ──────────
+
+function SingleNoteSection({
+  settingsKey,
+  title,
+}: { settingsKey: NoteKey; title: string }) {
   const { settings, setSettings } = useSettings();
-  const cur = settings.pianoNote;
+  const cur = settings[settingsKey];
 
   const setLevel = (level: Level) => {
     if (level === 'custom') return;
     setSettings({
       ...settings,
-      pianoNote: { level, knobs: PIANO_LEVEL_PRESETS[level] },
+      [settingsKey]: { level, knobs: PIANO_LEVEL_PRESETS[level] },
     });
   };
 
   const setKnob = <K extends keyof PianoNoteKnobs>(key: K, value: PianoNoteKnobs[K]) => {
     setSettings({
       ...settings,
-      pianoNote: { level: 'custom', knobs: { ...cur.knobs, [key]: value } },
+      [settingsKey]: { level: 'custom', knobs: { ...cur.knobs, [key]: value } },
     });
   };
 
   const rangeKey = `${cur.knobs.range[0]}-${cur.knobs.range[1]}`;
 
   return (
-    <Section title="piano · single note" subtitle="name the note">
+    <Section title={title} subtitle="name the note">
       <LevelSegments current={cur.level} onChange={setLevel} />
 
       <Disclosure summary="fine-tune">
@@ -218,17 +246,20 @@ function PianoSection() {
   );
 }
 
-// ────────── guitar chord ──────────
+// ────────── single chord (piano + guitar) ──────────
 
-function GuitarChordSection() {
+function SingleChordSection({
+  settingsKey,
+  title,
+}: { settingsKey: ChordKey; title: string }) {
   const { settings, setSettings } = useSettings();
-  const cur = settings.guitarChord;
+  const cur = settings[settingsKey];
 
   const setLevel = (level: Level) => {
     if (level === 'custom') return;
     setSettings({
       ...settings,
-      guitarChord: { level, knobs: GUITAR_CHORD_LEVEL_PRESETS[level] },
+      [settingsKey]: { level, knobs: GUITAR_CHORD_LEVEL_PRESETS[level] },
     });
   };
 
@@ -238,7 +269,7 @@ function GuitarChordSection() {
   ) => {
     setSettings({
       ...settings,
-      guitarChord: { level: 'custom', knobs: { ...cur.knobs, [key]: value } },
+      [settingsKey]: { level: 'custom', knobs: { ...cur.knobs, [key]: value } },
     });
   };
 
@@ -251,7 +282,7 @@ function GuitarChordSection() {
   };
 
   return (
-    <Section title="guitar · single chord" subtitle="name the chord">
+    <Section title={title} subtitle="name the chord">
       <LevelSegments current={cur.level} onChange={setLevel} />
 
       <Disclosure summary="fine-tune">
@@ -304,17 +335,20 @@ function GuitarChordSection() {
   );
 }
 
-// ────────── guitar progression ──────────
+// ────────── progression (piano + guitar) ──────────
 
-function GuitarProgSection() {
+function ProgSection({
+  settingsKey,
+  title,
+}: { settingsKey: ProgKey; title: string }) {
   const { settings, setSettings } = useSettings();
-  const cur = settings.guitarProg;
+  const cur = settings[settingsKey];
 
   const setLevel = (level: Level) => {
     if (level === 'custom') return;
     setSettings({
       ...settings,
-      guitarProg: { level, knobs: GUITAR_PROG_LEVEL_PRESETS[level] },
+      [settingsKey]: { level, knobs: GUITAR_PROG_LEVEL_PRESETS[level] },
     });
   };
 
@@ -324,7 +358,7 @@ function GuitarProgSection() {
   ) => {
     setSettings({
       ...settings,
-      guitarProg: { level: 'custom', knobs: { ...cur.knobs, [key]: value } },
+      [settingsKey]: { level: 'custom', knobs: { ...cur.knobs, [key]: value } },
     });
   };
 
@@ -338,7 +372,7 @@ function GuitarProgSection() {
   };
 
   return (
-    <Section title="guitar · chord progression" subtitle="name the changes">
+    <Section title={title} subtitle="name the changes">
       <LevelSegments current={cur.level} onChange={setLevel} />
 
       <Disclosure summary="fine-tune">
