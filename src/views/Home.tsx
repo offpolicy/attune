@@ -23,10 +23,10 @@ function formatStats(s: ModeStats): string {
   return [best, streak].filter(Boolean).join(' · ');
 }
 
-const CARDS: { mode: Mode; title: string; subtitle: string; ready: boolean }[] = [
-  { mode: 'piano-note',   title: 'piano',  subtitle: 'name the note',    ready: true  },
-  { mode: 'guitar-chord', title: 'guitar', subtitle: 'name the chord',   ready: false },
-  { mode: 'guitar-prog',  title: 'guitar', subtitle: 'name the changes', ready: false },
+const CARDS: { mode: Mode; title: string; subtitle: string }[] = [
+  { mode: 'piano-note',   title: 'piano',  subtitle: 'name the note'    },
+  { mode: 'guitar-chord', title: 'guitar', subtitle: 'name the chord'   },
+  { mode: 'guitar-prog',  title: 'guitar', subtitle: 'name the changes' },
 ];
 
 export function Home() {
@@ -51,9 +51,9 @@ export function Home() {
         {CARDS.map((card, i) => {
           const modeStats = stats[card.mode];
           const level = settings[settingsKeyFor(card.mode)].level;
-          const statLine = card.ready
-            ? `level ${level === 'custom' ? '·' : level} · ${levelLabel(level)} · ${formatStats(modeStats)}`
-            : 'coming next';
+          const statLine = `level ${
+            level === 'custom' ? '·' : level
+          } · ${levelLabel(level)} · ${formatStats(modeStats)}`;
           return (
             <ModeCard
               key={card.mode}
@@ -61,7 +61,6 @@ export function Home() {
               title={card.title}
               subtitle={card.subtitle}
               statLine={statLine}
-              disabled={!card.ready}
               onClick={() => navigateToMode(card.mode)}
             />
           );

@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { readJSON, writeJSON } from '../lib/storage';
 import type { Midi } from '../audio/theory';
+import type { ChordName, ProgKey, Roman } from '../exercises/chords';
 
 export type Level = 1 | 2 | 3 | 4 | 5 | 'custom';
 
@@ -17,14 +18,14 @@ export type PianoNoteKnobs = {
 };
 
 export type GuitarChordKnobs = {
-  pool: string[];
+  pool: ChordName[];
   voicing: 'fixed' | 'varied';
 };
 
 export type GuitarProgKnobs = {
-  key: string;
+  key: ProgKey;
   length: 3 | 4;
-  pool: string[];
+  pool: Roman[];
   tempo: 'slow' | 'medium' | 'fast';
   showRoman: boolean;
 };
@@ -56,7 +57,7 @@ export const DEFAULT_SETTINGS: Settings = {
       key: 'C',
       length: 3,
       pool: ['I', 'IV', 'V'],
-      tempo: 'medium',
+      tempo: 'slow',
       showRoman: false,
     },
   },
